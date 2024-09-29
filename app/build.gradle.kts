@@ -1,7 +1,7 @@
 plugins {
-    id("com.google.devtools.ksp")
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -55,8 +55,12 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.glide) {
         exclude(group = "com.github.bumptech.glide", module = "annotations")
+        ksp(libs.glide.compiler)
     }
-    ksp(libs.glide.compiler)
+    implementation(libs.androidx.ui.text.google.fonts)
+    implementation(libs.androidx.ui.text.android)
+    implementation(libs.androidx.runtime.android)
+    implementation(libs.androidx.material3.android)
     implementation(libs.androidx.recyclerview)
     implementation(libs.androidx.cardview)
     testImplementation(libs.junit)

@@ -1,14 +1,15 @@
 package com.example.itemanagerv2
 
 import android.os.Bundle
-import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
-import androidx.navigation.findNavController
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.navigateUp
-import androidx.navigation.ui.setupActionBarWithNavController
-import androidx.recyclerview.widget.RecyclerView
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.itemanagerv2.ui.theme.BaseTheme
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
@@ -17,7 +18,21 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+//        setContentView(
+//            ComposeView(this).apply {
+//                setContent {
+//                    // Add Compose content here
+//                    BaseTheme {
+//                        Surface(
+//                            modifier = Modifier.fillMaxSize(),
+//                            color = MaterialTheme.colorScheme.background
+//                        ) {
+////                            Greeting("Android")
+//                        }
+//                    }
+//                }
+//            }
+//        )
 
         objectsRecyclerView = findViewById(R.id.objectsRecyclerView)
         bottomNavigation = findViewById(R.id.bottomNavigation)

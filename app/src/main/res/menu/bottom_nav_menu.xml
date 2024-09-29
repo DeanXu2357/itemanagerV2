@@ -10,14 +10,14 @@
         android:title="@string/objects"/>
     <item
         android:id="@+id/navigation_add"
-        android:icon="@drawable/ic_add"
+        android:icon="@drawable/is_add"
         android:title="@string/add_new"/>
     <item
         android:id="@+id/navigation_alerts"
-        android:icon="@drawable/ic_alerts"
+        android:icon="@drawable/is_alert"
         android:title="@string/alerts"/>
     <item
         android:id="@+id/navigation_profile"
-        android:icon="@drawable/ic_profile"
+        android:icon="@drawable/is_profile"
         android:title="@string/profile"/>
 </menu>

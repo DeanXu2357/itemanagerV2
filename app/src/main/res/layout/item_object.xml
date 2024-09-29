@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_gravity="center"
-        android:paddingBottom="100%">
+        android:paddingBottom="100dp">
 
         <ImageView
             android:id="@+id/objectImage"
@@ -34,7 +34,6 @@
             android:textColor="@android:color/white"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:fontFamily="@font/work_sans"
             android:maxLines="2"
             android:ellipsize="end"/>
     </FrameLayout>

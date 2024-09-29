@@ -34,15 +34,13 @@
                         android:text="@string/my_objects"
                         android:textSize="18sp"
                         android:textStyle="bold"
-                        android:textColor="@color/dark_text"
-                        android:fontFamily="@font/work_sans"/>
+                        android:textColor="@color/dark_text"/>
 
                     <com.google.android.material.button.MaterialButton
                         android:layout_width="48dp"
                         android:layout_height="48dp"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
-                        app:icon="@drawable/ic_search"
                         style="@style/Widget.Material3.Button.IconButton"/>
                 </RelativeLayout>
             </androidx.appcompat.widget.Toolbar>
@@ -66,7 +64,6 @@
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="@color/dark_text"
-                    android:fontFamily="@font/work_sans"
                     android:layout_marginBottom="16dp"/>
 
                 <androidx.recyclerview.widget.RecyclerView

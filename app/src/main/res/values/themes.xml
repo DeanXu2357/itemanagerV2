@@ -29,7 +29,6 @@
         <item name="android:statusBarColor">@color/slate_50</item>
         <item name="android:windowLightStatusBar">true</item>
         <!-- Customize your theme here. -->
-        <item name="android:fontFamily">@font/work_sans</item>
     </style>
 
 </resources>
