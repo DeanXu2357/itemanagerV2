@@ -11,8 +11,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.gestures.detectTapGestures
-import com.example.itemanagerv2.ui.theme.BaseTheme
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -20,28 +18,16 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            BaseTheme {
-                MainContent()
-            }
-        }
-    }
-}
-
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainContent() {
+fun ExperimentalContent() {
     Scaffold(
         topBar = {
-            CustomTopAppBar(
-                title = "My Items",
+            ExperimentalTopAppBar(
+                title = "My Items (Experimental)",
                 onSearchClick = { /* TODO: 實現搜索功能 */ }
             )
         },
@@ -74,7 +60,7 @@ fun MainContent() {
                     ObjectItem("Laptop", "https://example.com/laptop.jpg")
                 )
             ) { item ->
-                ItemCard(
+                ExperimentalItemCard(
                     item = item,
                     onEdit = { /* TODO: 實現編輯功能 */ },
                     onCopy = { /* TODO: 實現複製功能 */ },
@@ -85,37 +71,18 @@ fun MainContent() {
     }
 }
 
-@Preview(showBackground = true)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainContentPreview() {
-    BaseTheme {
-        MainContent()
-    }
-}
-
-
-@Composable
-fun ItemCard(item: ObjectItem, onEdit: () -> Unit, onCopy: () -> Unit, onDelete: () -> Unit) {
+fun ExperimentalItemCard(item: ObjectItem, onEdit: () -> Unit, onCopy: () -> Unit, onDelete: () -> Unit) {
     var showMenu by remember { mutableStateOf(false) }
-    var longPressActive by remember { mutableStateOf(false) }
 
-    Surface(
+    Card(
+        onClick = { /* 一般點擊的處理 */ },
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
-            .padding(8.dp)
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onLongPress = {
-                        longPressActive = true
-                        showMenu = true
-                    },
-                    onTap = { /* 一般點擊的處理 */ }
-                )
-            },
+            .padding(8.dp),
         shape = MaterialTheme.shapes.medium,
-        tonalElevation = 1.dp,
-        shadowElevation = 1.dp
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
@@ -164,35 +131,35 @@ fun ItemCard(item: ObjectItem, onEdit: () -> Unit, onCopy: () -> Unit, onDelete:
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomTopAppBar(title: String, onSearchClick: () -> Unit) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp),
-        color = MaterialTheme.colorScheme.surface,
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-        ) {
+fun ExperimentalTopAppBar(title: String, onSearchClick: () -> Unit) {
+    TopAppBar(
+        title = {
             Text(
                 text = title,
+                modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.align(Alignment.Center)
+                color = MaterialTheme.colorScheme.onPrimary
             )
-            IconButton(
-                onClick = onSearchClick,
-                modifier = Modifier.align(Alignment.CenterEnd)
-            ) {
+        },
+        actions = {
+            IconButton(onClick = onSearchClick) {
                 Icon(
                     imageVector = Icons.Filled.Search,
                     contentDescription = "Search",
-                    tint = MaterialTheme.colorScheme.tertiary
+                    tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
-        }
-    }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+        )
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ExperimentalContentPreview() {
+    ExperimentalContent()
 }

@@ -66,7 +66,10 @@ dependencies {
     implementation(libs.androidx.recyclerview)
     implementation(libs.androidx.cardview)
     implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.compose.bom)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.ui.tooling.preview)
+    implementation(platform(libs.compose.bom))
+    implementation(libs.coil.compose)
     debugImplementation(libs.androidx.ui.tooling)
     implementation(libs.androidx.ui.test.junit4)
     implementation(libs.androidx.material.icons.core)
@@ -78,4 +81,5 @@ dependencies {
     implementation(libs.androidx.runtime.rxjava2)
     implementation(libs.androidx.espresso.core)
     testImplementation(libs.junit)
+    debugImplementation(libs.ui.tooling)
 }
