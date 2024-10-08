@@ -35,7 +35,9 @@ uiToolingVersion = "1.7.3"
 uiToolingPreviewVersion = "1.7.3"
 composeBomVersion = "2024.09.03"
 coilCompose = "2.7.0"
-material3 = "1.3.0"
+roomRuntime = "2.6.1"
+roomKtx = "2.6.1"
+roomCompiler = "2.6.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -73,6 +75,9 @@ ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref =
 ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview", version.ref = "uiToolingPreviewVersion" }
 compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBomVersion" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coilCompose" }
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "roomRuntime" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomCompiler" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

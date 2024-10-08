@@ -317,6 +317,7 @@
 - code_content: String (條碼內容，可為空)
 - code_image_id: Integer (外鍵，關聯到 Image，代表條碼圖片)
 - cover_image_id: Integer (外鍵，關聯到 Image，代表物品封面圖片)
+- image_ids: List<Integer> (外鍵，關聯到 Image，代表物品其他圖片)
 - created_at: Timestamp
 - updated_at: Timestamp
 
@@ -379,3 +380,46 @@
 5. 自定義條碼識別和資料填充規則
 6. 物品詳細資訊管理頁面
 7. 設置頁面
+
+
+com.example.itemanagerv2/
+├── data/
+│   ├── local/
+│   │   ├── AppDatabase.kt
+│   │   ├── dao/
+│   │   │   ├── ItemDao.kt
+│   │   │   ├── ItemCategoryDao.kt
+│   │   │   ├── CategoryAttributeDao.kt
+│   │   │   ├── ItemAttributeValueDao.kt
+│   │   │   └── ImageDao.kt
+│   │   └── entity/
+│   │       ├── Item.kt
+│   │       ├── ItemCategory.kt
+│   │       ├── CategoryAttribute.kt
+│   │       ├── ItemAttributeValue.kt
+│   │       └── Image.kt
+│   └── repository/
+│       ├── ItemRepository.kt
+│       ├── CategoryRepository.kt
+│       └── ImageRepository.kt
+├── di/
+│   └── AppModule.kt
+├── ui/
+│   ├── theme/
+│   │   └── Theme.kt
+│   ├── components/
+│   │   ├── CustomTopAppBar.kt
+│   │   └── ItemCard.kt
+│   ├── screens/
+│   │   ├── home/
+│   │   │   ├── HomeScreen.kt
+│   │   │   └── HomeViewModel.kt
+│   │   ├── itemdetail/
+│   │   │   ├── ItemDetailScreen.kt
+│   │   │   └── ItemDetailViewModel.kt
+│   │   └── settings/
+│   │       ├── SettingsScreen.kt
+│   │       └── SettingsViewModel.kt
+│   └── MainActivity.kt
+└── util/
+    └── DatabaseMigrations.kt
