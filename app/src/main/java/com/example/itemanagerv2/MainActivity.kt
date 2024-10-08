@@ -11,18 +11,20 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.gestures.detectTapGestures
-import com.example.itemanagerv2.ui.theme.BaseTheme
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.DpOffset
 import coil.compose.AsyncImage
+import com.example.itemanagerv2.ui.theme.BaseTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,9 +37,10 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
 @Composable
 fun MainContent() {
+    var selectedItem by remember { mutableIntStateOf(0) }
+
     Scaffold(
         topBar = {
             CustomTopAppBar(
@@ -46,18 +49,24 @@ fun MainContent() {
             )
         },
         bottomBar = {
-            var selectedItem by remember { mutableIntStateOf(0) }
             NavigationBar {
                 NavigationBarItem(
                     icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
+                    label = { Text("Home") },
                     selected = selectedItem == 0,
                     onClick = { selectedItem = 0 }
                 )
                 NavigationBarItem(
-                    icon = { Icon(Icons.Filled.Add, contentDescription = "Insert") },
+                    icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings") },
+                    label = { Text("Settings") },
                     selected = selectedItem == 1,
                     onClick = { selectedItem = 1 }
                 )
+            }
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { /* TODO: 新增物品 */ }) {
+                Icon(Icons.Filled.Add, contentDescription = "Add Item")
             }
         }
     ) { innerPadding ->
@@ -78,8 +87,7 @@ fun MainContent() {
                     item = item,
                     onEdit = { /* TODO: 實現編輯功能 */ },
                     onCopy = { /* TODO: 實現複製功能 */ },
-                    onDelete = { /* TODO: 實現刪除功能 */ },
-                    modifier = Modifier.fillMaxSize()
+                    onDelete = { /* TODO: 實現刪除功能 */ }
                 )
             }
         }
@@ -94,34 +102,27 @@ fun MainContentPreview() {
     }
 }
 
-
 @Composable
 fun ItemCard(
     item: ObjectItem,
     onEdit: () -> Unit,
     onCopy: () -> Unit,
-    onDelete: () -> Unit,
-    modifier: Modifier = Modifier
+    onDelete: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
-    var longPressActive by remember { mutableStateOf(false) }
+    var cardWidth by remember { mutableStateOf(0.dp) }
+    var menuWidth by remember { mutableStateOf(0.dp) }
+    val density = LocalDensity.current
 
-    Surface(
+    Card(
         modifier = Modifier
-            .aspectRatio(1.618f)
-            .padding(4.dp)
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onLongPress = {
-                        longPressActive = true
-                        showMenu = true
-                    },
-                    onTap = { /* 一般點擊的處理 */ }
-                )
+            .fillMaxWidth()
+            .height(200.dp)
+            .padding(8.dp)
+            .onGloballyPositioned { coordinates ->
+                cardWidth = with(density) { coordinates.size.width.toDp() }
             },
-        shape = MaterialTheme.shapes.medium,
-        tonalElevation = 1.dp,
-        shadowElevation = 1.dp
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
@@ -133,16 +134,32 @@ fun ItemCard(
 
             Text(
                 text = item.name,
-                color = Color.White,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(8.dp),
-                style = MaterialTheme.typography.bodyMedium
+                    .padding(16.dp),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimary
             )
+
+            IconButton(
+                onClick = { showMenu = true },
+                modifier = Modifier.align(Alignment.BottomEnd)
+            ) {
+                Icon(
+                    Icons.Default.MoreVert,
+                    contentDescription = "More options",
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
+            }
 
             DropdownMenu(
                 expanded = showMenu,
-                onDismissRequest = { showMenu = false }
+                onDismissRequest = { showMenu = false },
+                offset = DpOffset(x = cardWidth - menuWidth, y = 0.dp),
+                modifier = Modifier
+                    .onGloballyPositioned { coordinates ->
+                        menuWidth = with(density) { coordinates.size.width.toDp() }
+                    }
             ) {
                 DropdownMenuItem(
                     text = { Text("編輯") },
