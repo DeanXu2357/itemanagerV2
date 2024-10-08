@@ -78,7 +78,8 @@ fun MainContent() {
                     item = item,
                     onEdit = { /* TODO: 實現編輯功能 */ },
                     onCopy = { /* TODO: 實現複製功能 */ },
-                    onDelete = { /* TODO: 實現刪除功能 */ }
+                    onDelete = { /* TODO: 實現刪除功能 */ },
+                    modifier = Modifier.fillMaxSize()
                 )
             }
         }
@@ -95,15 +96,20 @@ fun MainContentPreview() {
 
 
 @Composable
-fun ItemCard(item: ObjectItem, onEdit: () -> Unit, onCopy: () -> Unit, onDelete: () -> Unit) {
+fun ItemCard(
+    item: ObjectItem,
+    onEdit: () -> Unit,
+    onCopy: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     var showMenu by remember { mutableStateOf(false) }
     var longPressActive by remember { mutableStateOf(false) }
 
     Surface(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp)
-            .padding(8.dp)
+            .aspectRatio(1.618f)
+            .padding(4.dp)
             .pointerInput(Unit) {
                 detectTapGestures(
                     onLongPress = {
@@ -130,8 +136,8 @@ fun ItemCard(item: ObjectItem, onEdit: () -> Unit, onCopy: () -> Unit, onDelete:
                 color = Color.White,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(16.dp),
-                style = MaterialTheme.typography.titleMedium
+                    .padding(8.dp),
+                style = MaterialTheme.typography.bodyMedium
             )
 
             DropdownMenu(
