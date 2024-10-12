@@ -47,7 +47,6 @@ android {
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -85,4 +84,11 @@ dependencies {
     implementation(libs.androidx.espresso.core)
     testImplementation(libs.junit)
     debugImplementation(libs.ui.tooling)
+
+    // Add Mockito dependencies for androidTest
+    androidTestImplementation(libs.mockito.core)
+    androidTestImplementation(libs.mockito.kotlin)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(libs.androidx.ui.test.junit4)
 }

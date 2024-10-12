@@ -38,6 +38,10 @@ coilCompose = "2.7.0"
 roomRuntime = "2.6.1"
 roomKtx = "2.6.1"
 roomCompiler = "2.6.1"
+mockitoCore = "5.14.1"
+mockitoKotlin = "5.4.0"
+testJunit = "1.1.5"
+testEspressoCore = "3.6.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -78,6 +82,10 @@ coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coi
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "roomRuntime" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomCompiler" }
+mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockitoCore" }
+mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockitoKotlin" }
+androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "testJunit" }
+androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "testEspressoCore" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
