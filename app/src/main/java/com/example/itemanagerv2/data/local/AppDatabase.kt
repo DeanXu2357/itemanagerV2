@@ -1,43 +1,31 @@
 package com.example.itemanagerv2.data.local
 
-import android.content.Context
 import androidx.room.Database
-import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
-import com.example.itemanagerv2.data.local.dao.ItemDao
-import com.example.itemanagerv2.data.local.entity.Item
+import androidx.room.TypeConverters
+import com.example.itemanagerv2.data.local.dao.*
+import com.example.itemanagerv2.data.local.entity.*
 
 @Database(
-    entities = [Item::class],
-    version = 1,
+    entities = [
+        Item::class,
+        ItemCategory::class,
+        CategoryAttribute::class,
+        ItemAttributeValue::class,
+        Image::class
+    ],
+    version = 2,
     exportSchema = false
 )
+@TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun itemDao(): ItemDao
+    abstract fun itemCategoryDao(): ItemCategoryDao
+    abstract fun categoryAttributeDao(): CategoryAttributeDao
+    abstract fun itemAttributeValueDao(): ItemAttributeValueDao
+    abstract fun imageDao(): ImageDao
 
     companion object {
-        @Volatile
-        private var INSTANCE: AppDatabase? = null
-
-        fun getDatabase(context: Context): AppDatabase {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "itemanager_database"
-                )
-                    .addMigrations(Migration_1_2)
-                    .build()
-                INSTANCE = instance
-                instance
-            }
-        }
-    }
-}
-
-val Migration_1_2 = object : Migration(1, 2) {
-    override fun migrate(database: SupportSQLiteDatabase) {
+        const val DATABASE_NAME = "item_manager_database"
     }
 }
