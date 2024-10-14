@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.hilt.android)
 }
 
 android {
@@ -29,16 +30,17 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
     }
     buildFeatures {
         viewBinding = true
         compose = true
     }
+    buildToolsVersion = "34.0.0"
     configurations.all {
         resolutionStrategy {
             force(libs.glide.annotations)
@@ -71,7 +73,8 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    implementation(libs.androidx.hilt.navigation.fragment)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
     ksp(libs.androidx.room.compiler)
     debugImplementation(libs.androidx.ui.tooling)
     implementation(libs.androidx.ui.test.junit4)
