@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.itemanagerv2">
 
+    <uses-sdk android:targetSdkVersion="34"/>
     <application
         android:name=".ItemanagerApplication"
         android:allowBackup="true"

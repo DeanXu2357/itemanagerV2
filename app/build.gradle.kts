@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.itemanagerv2"
-        minSdk = 31
+        minSdk = 34
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
