@@ -68,4 +68,18 @@ object DatabaseMigrations {
             database.execSQL("ALTER TABLE `items` ADD COLUMN `coverImageId` INTEGER")
         }
     }
+
+    val Migration_mock_data = object : Migration(2, 3) {
+        override fun migrate(database: SupportSQLiteDatabase) {
+            // Insert sample data
+            database.execSQL("""
+                INSERT INTO items (name, categoryId, codeType, codeContent, createdAt, updatedAt)
+                VALUES 
+                ('iPhone 13', 1, 'QR', 'IPHONE13-QR', ${System.currentTimeMillis()}, ${System.currentTimeMillis()}),
+                ('MacBook Pro', 1, 'Barcode', 'MACBOOKPRO-BARCODE', ${System.currentTimeMillis()}, ${System.currentTimeMillis()}),
+                ('AirPods Pro', 1, 'QR', 'AIRPODSPRO-QR', ${System.currentTimeMillis()}, ${System.currentTimeMillis()}),
+                ('iPad Air', 1, 'Barcode', 'IPADAIR-BARCODE', ${System.currentTimeMillis()}, ${System.currentTimeMillis()})
+            """.trimIndent())
+        }
+    }
 }

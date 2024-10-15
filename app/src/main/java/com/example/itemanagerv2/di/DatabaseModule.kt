@@ -26,8 +26,9 @@ object DatabaseModule {
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
-        .addMigrations(DatabaseMigrations.MIGRATION_1_2)
-        .build()
+            .addMigrations(DatabaseMigrations.MIGRATION_1_2)
+            .addMigrations(DatabaseMigrations.Migration_mock_data)
+            .build()
     }
 
     @Provides
@@ -37,10 +38,12 @@ object DatabaseModule {
     fun provideItemCategoryDao(database: AppDatabase): ItemCategoryDao = database.itemCategoryDao()
 
     @Provides
-    fun provideCategoryAttributeDao(database: AppDatabase): CategoryAttributeDao = database.categoryAttributeDao()
+    fun provideCategoryAttributeDao(database: AppDatabase): CategoryAttributeDao =
+        database.categoryAttributeDao()
 
     @Provides
-    fun provideItemAttributeValueDao(database: AppDatabase): ItemAttributeValueDao = database.itemAttributeValueDao()
+    fun provideItemAttributeValueDao(database: AppDatabase): ItemAttributeValueDao =
+        database.itemAttributeValueDao()
 
     @Provides
     fun provideImageDao(database: AppDatabase): ImageDao = database.imageDao()

@@ -14,7 +14,7 @@ import com.example.itemanagerv2.data.local.entity.*
         ItemAttributeValue::class,
         Image::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
