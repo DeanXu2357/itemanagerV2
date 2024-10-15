@@ -1,9 +1,6 @@
 package com.example.itemanagerv2
 
-import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
-import android.window.OnBackInvokedDispatcher
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -32,7 +29,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.itemanagerv2.data.local.dao.ItemDao
 import com.example.itemanagerv2.data.local.entity.Item
-import com.example.itemanagerv2.ui.component.FullScreenEditDialogWithImages
 import com.example.itemanagerv2.ui.component.ItemEditDialog
 import com.example.itemanagerv2.ui.theme.BaseTheme
 import com.example.itemanagerv2.viewmodel.ItemViewModel
