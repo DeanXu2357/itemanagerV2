@@ -2,8 +2,10 @@ package com.example.itemanagerv2.ui.component
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -14,120 +16,84 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.itemanagerv2.data.local.entity.Image
 import kotlinx.coroutines.launch
+import java.util.Date
 import kotlin.math.absoluteValue
 
 @Composable
-fun CustomImageCarousel(
-    images: List<String>,
+fun MultiPreviewImageCarousel(
+    images: List<Image>,
     onAddClick: () -> Unit,
     onDeleteClick: (Int) -> Unit
 ) {
-    var currentPage by remember { mutableStateOf(0) }
-    var dragOffset by remember { mutableStateOf(0f) }
-    var componentWidth by remember { mutableStateOf(0) }
+    val pagerState = rememberPagerState(pageCount = { images.size + 1 })
     val coroutineScope = rememberCoroutineScope()
-    val density = LocalDensity.current
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .onSizeChanged { size ->
-                componentWidth = size.width
-            }
-    ) {
-        Box(
+    Column(modifier = Modifier.fillMaxWidth()) {
+        HorizontalPager(
+            state = pagerState,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(300.dp)
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures(
-                        onDragEnd = {
-                            if (componentWidth > 0 && dragOffset.absoluteValue > componentWidth / 3) {
-                                if (dragOffset > 0 && currentPage > 0) {
-                                    currentPage--
-                                } else if (dragOffset < 0 && currentPage < images.size) {
-                                    currentPage++
-                                }
-                            }
-                            coroutineScope.launch {
-                                dragOffset = 0f
-                            }
-                        },
-                        onDragCancel = {
-                            coroutineScope.launch {
-                                dragOffset = 0f
-                            }
-                        },
-                        onHorizontalDrag = { change, dragAmount ->
-                            dragOffset += dragAmount
-                            change.consume()
-                        }
+        ) { page ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+            ) {
+                if (page < images.size) {
+                    val pageOffset = (page - pagerState.currentPage).toFloat()
+                    val scale = animateFloatAsState(
+                        targetValue = if (pageOffset == 0f) 1f else 0.8f,
+                        label = "scale"
                     )
-                }
-        ) {
-            for (index in images.indices) {
-                val imageUrl = images[index]
-                val pageOffset = if (componentWidth > 0) {
-                    (index - currentPage - dragOffset / componentWidth).coerceIn(-1f, 1f)
-                } else {
-                    0f
-                }
-                val scale = animateFloatAsState(if (pageOffset == 0f) 1f else 0.8f)
 
-                Card(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(8.dp)
-                        .graphicsLayer {
-                            scaleX = scale.value
-                            scaleY = scale.value
-                            alpha = 1f - pageOffset.absoluteValue
-                            translationX = componentWidth * pageOffset
-                        },
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        AsyncImage(
-                            model = imageUrl,
-                            contentDescription = "Image $index",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                        IconButton(
-                            onClick = { onDeleteClick(index) },
-                            modifier = Modifier.align(Alignment.TopEnd)
-                        ) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                    Card(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = scale.value
+                                scaleY = scale.value
+                                alpha = 1f - pageOffset.absoluteValue.coerceIn(0f, 1f)
+                            },
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            AsyncImage(
+                                model = images[page].filePath,
+                                contentDescription = "Image $page",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                            IconButton(
+                                onClick = { onDeleteClick(page) },
+                                modifier = Modifier.align(Alignment.TopEnd)
+                            ) {
+                                Icon(Icons.Default.Delete, contentDescription = "Delete")
+                            }
                         }
                     }
-                }
-            }
-
-            // Add button
-            if (currentPage == images.size) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(8.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Box(
+                } else {
+                    // Add button
+                    Card(
                         modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                     ) {
-                        FloatingActionButton(
-                            onClick = onAddClick,
-                            modifier = Modifier.size(56.dp)
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = "Add Image")
+                            FloatingActionButton(
+                                onClick = onAddClick,
+                                modifier = Modifier.size(56.dp)
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = "Add Image")
+                            }
                         }
                     }
                 }
@@ -141,30 +107,84 @@ fun CustomImageCarousel(
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
         ) {
-            for (iteration in 0..images.size) {
-                val color = if (currentPage == iteration) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+            repeat(pagerState.pageCount) { iteration ->
+                val color = if (pagerState.currentPage == iteration) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                }
                 Box(
                     modifier = Modifier
                         .padding(2.dp)
                         .clip(CircleShape)
                         .background(color)
                         .size(8.dp)
+                        .clickable {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(iteration)
+                            }
+                        }
                 )
             }
         }
     }
 }
 
+
 @Preview(showBackground = true)
 @Composable
-fun CustomImageCarouselPreview() {
+fun MultiPreviewImageCarouselPreview() {
     MaterialTheme {
+        val currentDate = Date()
         val sampleImages = listOf(
-            "https://example.com/image1.jpg",
-            "https://example.com/image2.jpg",
-            "https://example.com/image3.jpg"
+            Image(
+                id = 1,
+                filePath = "https://example.com/image1.jpg",
+                itemId = 1,
+                order = 0,
+                content = "Sample image 1",
+                createdAt = currentDate,
+                updatedAt = currentDate
+            ),
+            Image(
+                id = 2,
+                filePath = "https://example.com/image2.jpg",
+                itemId = 1,
+                order = 1,
+                content = "Sample image 2",
+                createdAt = currentDate,
+                updatedAt = currentDate
+            ),
+            Image(
+                id = 3,
+                filePath = "https://example.com/image3.jpg",
+                itemId = 1,
+                order = 2,
+                content = "Sample image 3",
+                createdAt = currentDate,
+                updatedAt = currentDate
+            ),
+            Image(
+                id = 4,
+                filePath = "https://example.com/image4.jpg",
+                itemId = 1,
+                order = 3,
+                content = "Sample image 4",
+                createdAt = currentDate,
+                updatedAt = currentDate
+            ),
+            Image(
+                id = 5,
+                filePath = "https://example.com/image5.jpg",
+                itemId = 1,
+                order = 4,
+                content = "Sample image 5",
+                createdAt = currentDate,
+                updatedAt = currentDate
+            )
         )
-        CustomImageCarousel(
+
+        MultiPreviewImageCarousel(
             images = sampleImages,
             onAddClick = { /* Preview: Do nothing */ },
             onDeleteClick = { /* Preview: Do nothing */ }
