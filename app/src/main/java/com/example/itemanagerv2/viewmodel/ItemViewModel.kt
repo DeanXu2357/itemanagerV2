@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
 import android.graphics.Bitmap
+import android.util.Log
 import com.example.itemanagerv2.data.local.dao.ImageDao
 import com.example.itemanagerv2.data.local.dao.ItemAttributeValueDao
 import com.example.itemanagerv2.data.local.dao.ItemCategoryDao
@@ -88,8 +89,10 @@ class ItemViewModel @Inject constructor(
                     // 批量獲取屬性值
                     val allAttributes = itemAttributeValueDao.getAttributesForItems(itemIds)
 
-                    val newItemDetails = newItems.map { item ->
-                        ItemCardDetail(
+                    val newItemCardDetail = mutableListOf<ItemCardDetail>()
+
+                    for (item in newItems) {
+                        val cardDetail = ItemCardDetail(
                             id = item.id,
                             name = item.name,
                             categoryId = item.categoryId,
@@ -99,14 +102,16 @@ class ItemViewModel @Inject constructor(
                             coverImageId = item.coverImageId,
                             createdAt = item.createdAt,
                             updatedAt = item.updatedAt,
-                            category = categories.find { it.id == item.categoryId }!!,
+                            category = categories.find { it.id == item.categoryId },
                             codeImage = allImages.find { it.id == item.codeImageId },
                             coverImage = allImages.find { it.id == item.coverImageId },
                             images = allImages.filter { it.itemId == item.id },
                             attributes = allAttributes.filter { it.itemId == item.id }
                         )
+                        newItemCardDetail.add(cardDetail)
                     }
-                    _itemCardDetails.value  = _itemCardDetails.value + newItemDetails
+
+                    _itemCardDetails.value = _itemCardDetails.value + newItemCardDetail
                     currentPage++
                     hasMoreItems = newItems.size == pageSize
                 } else {
@@ -167,7 +172,8 @@ class ItemViewModel @Inject constructor(
     private fun refreshItems() {
         currentPage = 0
         hasMoreItems = true
-        _itemCardDetails.value = emptyList() // TODO: Clear the list of items and get first page data
+        _itemCardDetails.value =
+            emptyList() // TODO: Clear the list of items and get first page data
         loadMoreItems()
     }
 
@@ -198,3 +204,4 @@ class ItemViewModel @Inject constructor(
         }
     }
 }
+

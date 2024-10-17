@@ -41,6 +41,7 @@ fun MainContent(itemViewModel: ItemViewModel) {
     var itemCardDetailToEdit by remember { mutableStateOf<ItemCardDetail?>(null) }
 
     LaunchedEffect(gridState) {
+//        itemViewModel.loadMoreItems()
         snapshotFlow {
             val layoutInfo = gridState.layoutInfo
             val totalItemsNumber = layoutInfo.totalItemsCount
