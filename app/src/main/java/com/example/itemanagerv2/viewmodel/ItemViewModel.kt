@@ -13,7 +13,6 @@ import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
 import android.graphics.Bitmap
-import android.util.Log
 import com.example.itemanagerv2.data.local.dao.ImageDao
 import com.example.itemanagerv2.data.local.dao.ItemAttributeValueDao
 import com.example.itemanagerv2.data.local.dao.ItemCategoryDao
@@ -80,13 +79,13 @@ class ItemViewModel @Inject constructor(
                 if (newItems.isNotEmpty()) {
                     val itemIds = newItems.map { it.id }
 
-                    // 批量獲取類別
+                    // batch get categories
                     val categories = itemCategoryDao.getCategoriesForItems(itemIds)
 
-                    // 批量獲取圖片
+                    // batch get images
                     val allImages = imageDao.getImagesForItems(itemIds)
 
-                    // 批量獲取屬性值
+                    // batch get item attributes
                     val allAttributes = itemAttributeValueDao.getAttributesForItems(itemIds)
 
                     val newItemCardDetail = mutableListOf<ItemCardDetail>()

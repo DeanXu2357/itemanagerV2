@@ -82,4 +82,46 @@ object DatabaseMigrations {
             """.trimIndent())
         }
     }
+
+    val MIGRATION_ADDDEFAULTSETTINGS = object : Migration(2, 3) {
+        override fun migrate(database: SupportSQLiteDatabase) {
+            // Add default ItemCategories
+            database.execSQL("""
+                INSERT INTO item_categories (name, createdAt, updatedAt)
+                VALUES 
+                ('Electronics', ${System.currentTimeMillis()}, ${System.currentTimeMillis()}),
+                ('Collectibles', ${System.currentTimeMillis()}, ${System.currentTimeMillis()}),
+                ('Others', ${System.currentTimeMillis()}, ${System.currentTimeMillis()})
+            """.trimIndent())
+
+            // Add CategoryAttributes for Electronics
+            database.execSQL("""
+                INSERT INTO category_attributes (categoryId, name, isRequired, isEditable, valueType, defaultValue, createdAt, updatedAt)
+                VALUES 
+                (1, 'name', 1, 1, 'string', NULL, ${System.currentTimeMillis()}, ${System.currentTimeMillis()}),
+                (1, 'price', 1, 1, 'number', '0', ${System.currentTimeMillis()}, ${System.currentTimeMillis()}),
+                (1, 'quantity', 1, 1, 'number', '1', ${System.currentTimeMillis()}, ${System.currentTimeMillis()}),
+                (1, 'brand', 0, 1, 'string', '', ${System.currentTimeMillis()}, ${System.currentTimeMillis()})
+            """.trimIndent())
+
+            // Add CategoryAttributes for Collectibles
+            database.execSQL("""
+                INSERT INTO category_attributes (categoryId, name, isRequired, isEditable, valueType, defaultValue, createdAt, updatedAt)
+                VALUES 
+                (2, 'name', 1, 1, 'string', NULL, ${System.currentTimeMillis()}, ${System.currentTimeMillis()}),
+                (2, 'price', 1, 1, 'number', '0', ${System.currentTimeMillis()}, ${System.currentTimeMillis()}),
+                (2, 'quantity', 1, 1, 'number', '1', ${System.currentTimeMillis()}, ${System.currentTimeMillis()}),
+                (2, 'brand', 0, 1, 'string', '', ${System.currentTimeMillis()}, ${System.currentTimeMillis()}),
+                (2, 'isUnpack', 0, 1, 'boolean', '1', ${System.currentTimeMillis()}, ${System.currentTimeMillis()})
+            """.trimIndent())
+
+            // Add CategoryAttributes for Others
+            database.execSQL("""
+                INSERT INTO category_attributes (categoryId, name, isRequired, isEditable, valueType, defaultValue, createdAt, updatedAt)
+                VALUES 
+                (3, 'name', 1, 1, 'string', NULL, ${System.currentTimeMillis()}, ${System.currentTimeMillis()}),
+                (3, 'quantity', 1, 1, 'number', '1', ${System.currentTimeMillis()}, ${System.currentTimeMillis()})
+            """.trimIndent())
+        }
+    }
 }

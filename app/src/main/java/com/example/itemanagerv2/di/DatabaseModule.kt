@@ -27,7 +27,7 @@ object DatabaseModule {
             AppDatabase.DATABASE_NAME
         )
             .addMigrations(DatabaseMigrations.MIGRATION_1_2)
-            .addMigrations(DatabaseMigrations.Migration_mock_data)
+            .addMigrations(DatabaseMigrations.Migration_mock_data, DatabaseMigrations.MIGRATION_ADDDEFAULTSETTINGS)
             .build()
     }
 
