@@ -27,14 +27,16 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-import com.example.itemanagerv2.data.local.dao.ItemDao
+import com.example.itemanagerv2.data.local.entity.Image
 import com.example.itemanagerv2.data.local.entity.Item
+import com.example.itemanagerv2.data.local.entity.ItemAttributeValue
+import com.example.itemanagerv2.data.local.entity.ItemCategory
+import com.example.itemanagerv2.data.local.model.ItemCardDetail
 import com.example.itemanagerv2.ui.component.ItemEditDialog
 import com.example.itemanagerv2.ui.theme.BaseTheme
 import com.example.itemanagerv2.viewmodel.ItemViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
+import java.util.Date
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -54,11 +56,12 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainContent(itemViewModel: ItemViewModel) {
     var selectedItem by remember { mutableStateOf(0) }
-    val items by itemViewModel.items.collectAsStateWithLifecycle()
+    val cardDetails by itemViewModel.itemCardDetails.collectAsStateWithLifecycle()
     val isLoading by itemViewModel.isLoading.collectAsStateWithLifecycle(initialValue = false)
     val gridState = rememberLazyGridState()
     var showEditDialog by remember { mutableStateOf(false) }
     var itemToEdit by remember { mutableStateOf<Item?>(null) }
+    var itemCardDetailToEdit by remember { mutableStateOf<ItemCardDetail?>(null) }
 
     LaunchedEffect(gridState) {
         snapshotFlow {
@@ -77,36 +80,38 @@ fun MainContent(itemViewModel: ItemViewModel) {
     }
 
     MainContentUI(
-        items = items,
+        cardDetails = cardDetails,
         isLoading = isLoading,
         selectedItem = selectedItem,
         onSelectedItemChange = { selectedItem = it },
         onLoadMore = { itemViewModel.loadMoreItems() },
-        onEditItem = { item ->
-            itemToEdit = item
+        onEditCard = { cardDetail ->
+            itemCardDetailToEdit = cardDetail
             showEditDialog = true
         }
     )
 
-    if (showEditDialog && itemToEdit != null ) {
+    if (showEditDialog && itemToEdit != null) {
         ItemEditDialog(
-            item = itemToEdit!!,
+            item = itemCardDetailToEdit!!,
             onDismiss = {
                 showEditDialog = false
                 itemToEdit = null
             },
+            {/*TODO: on save*/ },
+            {/*TODO: on delete*/ }
         ) { }
     }
 }
 
 @Composable
 fun MainContentUI(
-    items: List<Item>,
+    cardDetails: List<ItemCardDetail>,
     isLoading: Boolean,
     selectedItem: Int,
     onSelectedItemChange: (Int) -> Unit,
     onLoadMore: () -> Unit,
-    onEditItem: (Item) -> Unit
+    onEditCard: (ItemCardDetail) -> Unit
 ) {
     val gridState = rememberLazyGridState()
 
@@ -138,18 +143,20 @@ fun MainContentUI(
             }
         }
     ) { innerPadding ->
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 state = gridState,
                 modifier = Modifier.fillMaxSize()
             ) {
-                items(items) { item ->
+                items(cardDetails) { item ->
                     ItemCard(
-                        item = item,
-                        onEdit = { onEditItem(item) },
+                        cardDetail = item,
+                        onEdit = { onEditCard(item) },
                         onCopy = { /* TODO: 實現複製功能 */ },
                         onDelete = { /* TODO: 實現刪除功能 */ }
                     )
@@ -171,7 +178,12 @@ fun MainContentUI(
 }
 
 @Composable
-fun ItemCard(item: Item, onEdit: () -> Unit, onCopy: () -> Unit, onDelete: () -> Unit) {
+fun ItemCard(
+    cardDetail: ItemCardDetail,
+    onEdit: () -> Unit,
+    onCopy: () -> Unit,
+    onDelete: () -> Unit
+) {
     var showMenu by remember { mutableStateOf(false) }
     var cardWidth by remember { mutableStateOf(0.dp) }
     var menuWidth by remember { mutableStateOf(0.dp) }
@@ -190,14 +202,14 @@ fun ItemCard(item: Item, onEdit: () -> Unit, onCopy: () -> Unit, onDelete: () ->
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
-                model = item.coverImageId,
-                contentDescription = item.name,
+                model = cardDetail.coverImage?.filePath ?: "",
+                contentDescription = cardDetail.name,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
 
             Text(
-                text = item.name,
+                text = cardDetail.name,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .padding(16.dp),
@@ -284,33 +296,104 @@ fun CustomTopAppBar(title: String, onSearchClick: () -> Unit) {
 @Preview(showBackground = true)
 @Composable
 fun MainContentPreview() {
-    val previewItems =
-        listOf(
-            Item(1, "Sample Item 1", 1, "QR", "Sample content", 0, 0),
-            Item(2, "Sample Item 2", 2, "Barcode", "Sample content 2", 0, 0),
-            Item(3, "Sample Item 3", 3, "QR", "Sample content 3", 0, 0),
-            Item(4, "Sample Item 4", 4, "Barcode", "Sample content 4", 0, 0)
+    val itemCategoryDummy = ItemCategory(
+        id = 1,
+        name = "Sample Category",
+        createdAt = Date(),
+        updatedAt = Date()
+    )
+    val imageDummy = Image(
+        id = 1,
+        filePath = "https://example.com/image1.jpg",
+        itemId = 1,
+        order = 0,
+        content = "Sample image 1",
+        createdAt = Date(),
+        updatedAt = Date()
+    )
+    val attributeDummy = ItemAttributeValue(
+        id = 1,
+        value = "Sample Value",
+        itemId = 1,
+        createdAt = Date(),
+        updatedAt = Date(),
+        attributeId = 1
+    )
+    val previewCardDetails = listOf(
+        ItemCardDetail(
+            id = 1,
+            name = "Sample Item 1",
+            coverImage = null,
+            categoryId = 1,
+            codeType = "QR",
+            codeContent = "Sample content",
+            codeImageId = 0,
+            coverImageId = 0,
+            createdAt = 0,
+            updatedAt = 0,
+            category = itemCategoryDummy,
+            codeImage = imageDummy,
+            images = listOf(imageDummy),
+            attributes = listOf(attributeDummy),
+        ),
+        ItemCardDetail(
+            id = 2,
+            name = "Sample Item 2",
+            coverImage = null,
+            categoryId = 2,
+            codeType = "Barcode",
+            codeContent = "Sample content 2",
+            codeImageId = 0,
+            coverImageId = 0,
+            createdAt = 0,
+            updatedAt = 0,
+            category = itemCategoryDummy,
+            codeImage = imageDummy,
+            images = listOf(imageDummy),
+            attributes = listOf(attributeDummy),
+        ),
+        ItemCardDetail(
+            id = 3,
+            name = "Sample Item 3",
+            coverImage = null,
+            categoryId = 3,
+            codeType = "QR",
+            codeContent = "Sample content 3",
+            codeImageId = 0,
+            coverImageId = 0,
+            createdAt = 0,
+            updatedAt = 0,
+            category = itemCategoryDummy,
+            codeImage = imageDummy,
+            images = listOf(imageDummy),
+            attributes = listOf(attributeDummy),
+        ),
+        ItemCardDetail(
+            id = 4,
+            name = "Sample Item 4",
+            coverImage = null,
+            categoryId = 4,
+            codeType = "Barcode",
+            codeContent = "Sample content 4",
+            codeImageId = 0,
+            coverImageId = 0,
+            createdAt = 0,
+            updatedAt = 0,
+            category = itemCategoryDummy,
+            codeImage = imageDummy,
+            images = listOf(imageDummy),
+            attributes = listOf(attributeDummy),
         )
+    )
 
     BaseTheme {
         MainContentUI(
-            items = previewItems,
+            cardDetails = previewCardDetails,
             isLoading = false,
             selectedItem = 0,
             onSelectedItemChange = {},
             onLoadMore = {},
-            onEditItem = {}
+            onEditCard = {}
         )
     }
-}
-
-// Fake DAO for preview
-class FakeItemDao : ItemDao {
-    override fun getAll(): Flow<List<Item>> = flowOf(emptyList())
-    override suspend fun getPaginatedItems(limit: Int, offset: Int): List<Item> = emptyList()
-    override suspend fun getTotalItemCount(): Int = 0
-    override suspend fun insert(item: Item) {}
-    override suspend fun updateItem(item: Item) {}
-    override suspend fun deleteItem(item: Item) {}
-    override suspend fun getItemById(id: Int): Item? = null
 }

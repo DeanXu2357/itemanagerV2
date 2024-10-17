@@ -96,8 +96,12 @@
 7. 設置頁面
 
 
+# 檔案架構
+```
 com.example.itemanagerv2/
-├── data/
+├── data/local/
+│   ├── model/
+│   │   └── ItemWithImages.kt
 │   ├── local/
 │   │   ├── AppDatabase.kt
 │   │   ├── dao/
@@ -137,3 +141,4 @@ com.example.itemanagerv2/
 │   └── MainActivity.kt
 └── util/
     └── DatabaseMigrations.kt
+```

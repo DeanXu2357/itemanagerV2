@@ -20,4 +20,7 @@ interface ItemCategoryDao {
 
     @Delete
     suspend fun deleteCategory(category: ItemCategory)
+
+    @Query("SELECT * FROM item_categories WHERE id IN (:categoryIds)")
+    suspend fun getCategoriesForItems(categoryIds: List<Int>): List<ItemCategory>
 }
