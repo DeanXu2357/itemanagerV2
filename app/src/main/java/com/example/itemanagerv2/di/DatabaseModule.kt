@@ -1,6 +1,7 @@
 package com.example.itemanagerv2.di
 
 import android.content.Context
+import android.util.Log
 import androidx.room.Room
 import com.example.itemanagerv2.data.local.AppDatabase
 import com.example.itemanagerv2.data.local.DatabaseMigrations
@@ -21,13 +22,14 @@ object DatabaseModule {
     fun provideAppDatabase(
         @ApplicationContext context: Context
     ): AppDatabase {
+        Log.d("DatabaseModule", "Creating AppDatabase")
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
             .addMigrations(DatabaseMigrations.MIGRATION_1_2)
-            .addMigrations(DatabaseMigrations.Migration_mock_data, DatabaseMigrations.MIGRATION_ADDDEFAULTSETTINGS)
+            .fallbackToDestructiveMigration()
             .build()
     }
 

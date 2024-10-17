@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
 import android.graphics.Bitmap
+import android.util.Log
 import com.example.itemanagerv2.data.local.dao.ImageDao
 import com.example.itemanagerv2.data.local.dao.ItemAttributeValueDao
 import com.example.itemanagerv2.data.local.dao.ItemCategoryDao
@@ -69,6 +70,7 @@ class ItemViewModel @Inject constructor(
     }
 
     fun loadMoreItems() {
+        Log.d("ItemViewModel", "Loading items")
         if (_isLoading.value || !hasMoreItems) return
 
         viewModelScope.launch {
@@ -76,6 +78,7 @@ class ItemViewModel @Inject constructor(
                 _isLoading.value = true
                 _error.value = null
                 val newItems = itemDao.getPaginatedItems(pageSize, currentPage * pageSize)
+                Log.d("ItemViewModel", "Loaded ${newItems.size} items")
                 if (newItems.isNotEmpty()) {
                     val itemIds = newItems.map { it.id }
 
@@ -109,7 +112,7 @@ class ItemViewModel @Inject constructor(
                         )
                         newItemCardDetail.add(cardDetail)
                     }
-
+                    Log.d("ItemViewModel", "Loaded ${newItemCardDetail.size} items")
                     _itemCardDetails.value = _itemCardDetails.value + newItemCardDetail
                     currentPage++
                     hasMoreItems = newItems.size == pageSize
@@ -118,6 +121,7 @@ class ItemViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _error.value = "Error loading items: ${e.message}"
+                Log.d("ItemViewModel", "Error loading items: ${e}") // TODO: find the correct way to handle error
             } finally {
                 _isLoading.value = false
             }

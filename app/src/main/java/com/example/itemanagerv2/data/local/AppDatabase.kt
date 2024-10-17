@@ -14,7 +14,7 @@ import com.example.itemanagerv2.data.local.entity.*
         ItemAttributeValue::class,
         Image::class
     ],
-    version = 3,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -26,6 +26,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun imageDao(): ImageDao
 
     companion object {
-        const val DATABASE_NAME = "item_manager_database"
+        const val DATABASE_NAME = "itemanager_database"
     }
 }
