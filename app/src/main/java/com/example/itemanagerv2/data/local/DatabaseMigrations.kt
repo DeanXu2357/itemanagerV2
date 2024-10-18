@@ -9,6 +9,23 @@ object DatabaseMigrations {
         override fun migrate(database: SupportSQLiteDatabase) {
             Log.d("DatabaseMigration", "Starting migration from version 1 to 2")
 
+            // Create Item table
+            database.execSQL("""
+                CREATE TABLE IF NOT EXISTS `items` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `name` TEXT NOT NULL,
+                    `categoryId` INTEGER NOT NULL,
+                    `codeType` TEXT,
+                    `codeContent` TEXT,
+                    `codeImageId` INTEGER,
+                    `coverImageId` INTEGER,
+                    `imageIds` TEXT,
+                    `createdAt` INTEGER NOT NULL,
+                    `updatedAt` INTEGER NOT NULL
+                )
+            """.trimIndent())
+            Log.d("DatabaseMigration", "Migration Create Item table completed")
+
             // Create item_categories table
             database.execSQL("""
                 CREATE TABLE IF NOT EXISTS `item_categories` (
@@ -68,15 +85,6 @@ object DatabaseMigrations {
             """.trimIndent())
 
             Log.d("DatabaseMigration", "Migration Create images table completed")
-
-            // Add new columns to items table
-            database.execSQL("ALTER TABLE `items` ADD COLUMN `categoryId` INTEGER")
-            database.execSQL("ALTER TABLE `items` ADD COLUMN `codeType` TEXT")
-            database.execSQL("ALTER TABLE `items` ADD COLUMN `codeContent` TEXT")
-            database.execSQL("ALTER TABLE `items` ADD COLUMN `codeImageId` INTEGER")
-            database.execSQL("ALTER TABLE `items` ADD COLUMN `coverImageId` INTEGER")
-
-            Log.d("DatabaseMigration", "Migration Add new columns to items table completed")
 
             // Add default ItemCategories
             database.execSQL("""
