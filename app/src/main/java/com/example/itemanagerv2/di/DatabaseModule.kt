@@ -1,7 +1,6 @@
 package com.example.itemanagerv2.di
 
 import android.content.Context
-import android.database.sqlite.SQLiteDatabase
 import android.util.Log
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -9,6 +8,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.itemanagerv2.data.local.AppDatabase
 import com.example.itemanagerv2.data.local.DatabaseMigrations
 import com.example.itemanagerv2.data.local.dao.*
+import com.example.itemanagerv2.data.local.repository.ItemRepository
+import com.example.itemanagerv2.data.manager.ImageManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,11 +23,7 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideAppDatabase(
-        @ApplicationContext context: Context
-    ): AppDatabase {
-        Log.d("DatabaseModule", "Creating AppDatabase")
-
+    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
@@ -45,9 +42,6 @@ object DatabaseModule {
             })
             .addMigrations(DatabaseMigrations.MIGRATION_1_2)
             .build()
-            .also { db ->
-                Log.d("DatabaseModule", "Database version: ${getCurrentDatabaseVersion(context)}")
-            }
     }
 
     @Provides
@@ -57,25 +51,29 @@ object DatabaseModule {
     fun provideItemCategoryDao(database: AppDatabase): ItemCategoryDao = database.itemCategoryDao()
 
     @Provides
-    fun provideCategoryAttributeDao(database: AppDatabase): CategoryAttributeDao =
-        database.categoryAttributeDao()
+    fun provideCategoryAttributeDao(database: AppDatabase): CategoryAttributeDao = database.categoryAttributeDao()
 
     @Provides
-    fun provideItemAttributeValueDao(database: AppDatabase): ItemAttributeValueDao =
-        database.itemAttributeValueDao()
+    fun provideItemAttributeValueDao(database: AppDatabase): ItemAttributeValueDao = database.itemAttributeValueDao()
 
     @Provides
     fun provideImageDao(database: AppDatabase): ImageDao = database.imageDao()
-}
 
-fun getCurrentDatabaseVersion(context: Context): Int {
-    val dbPath = context.getDatabasePath(AppDatabase.DATABASE_NAME).absolutePath
-    return try {
-        SQLiteDatabase.openDatabase(dbPath, null, SQLiteDatabase.OPEN_READONLY).use { db ->
-            db.version
-        }
-    } catch (e: Exception) {
-        Log.e("DatabaseModule", "Error getting database version", e)
-        -1 // Return -1 if error
+    @Provides
+    @Singleton
+    fun provideItemRepository(
+        itemDao: ItemDao,
+        itemCategoryDao: ItemCategoryDao,
+        categoryAttributeDao: CategoryAttributeDao,
+        itemAttributeValueDao: ItemAttributeValueDao,
+        imageDao: ImageDao
+    ): ItemRepository {
+        return ItemRepository(itemDao, itemCategoryDao, categoryAttributeDao, itemAttributeValueDao, imageDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideImageManager(@ApplicationContext context: Context): ImageManager {
+        return ImageManager(context)
     }
 }

@@ -23,11 +23,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContent {
-            BaseTheme {
-                MainContent(itemViewModel)
-            }
-        }
+        setContent { BaseTheme { MainContent(itemViewModel) } }
     }
 }
 
@@ -38,11 +34,12 @@ fun MainContent(itemViewModel: ItemViewModel) {
     val isLoading by itemViewModel.isLoading.collectAsStateWithLifecycle(initialValue = false)
     val gridState = rememberLazyGridState()
     var showEditDialog by remember { mutableStateOf(false) }
+    var showAddDialog by remember { mutableStateOf(false) }
     var itemToEdit by remember { mutableStateOf<Item?>(null) }
     var itemCardDetailToEdit by remember { mutableStateOf<ItemCardDetail?>(null) }
 
     LaunchedEffect(gridState) {
-//        itemViewModel.loadMoreItems()
+        //        itemViewModel.loadMoreItems()
         snapshotFlow {
             val layoutInfo = gridState.layoutInfo
             val totalItemsNumber = layoutInfo.totalItemsCount
@@ -69,8 +66,12 @@ fun MainContent(itemViewModel: ItemViewModel) {
             itemCardDetailToEdit = cardDetail
             showEditDialog = true
         },
-        {},
-        {}
+        onManualAdd = {
+            showAddDialog = true
+        },
+        onScanAdd = {
+            /*TODO: handle scan add*/
+        }
     )
 
     if (showEditDialog && itemToEdit != null) {
@@ -80,8 +81,39 @@ fun MainContent(itemViewModel: ItemViewModel) {
                 showEditDialog = false
                 itemToEdit = null
             },
-            {/*TODO: on save*/ },
-            {/*TODO: on delete*/ }
-        ) { }
+            onSave = { /*TODO: on save*/ },
+            onAddImage = { /*TODO: handle add image*/ },
+            onDeleteImage = { /*TODO: on delete*/ }
+        )
+    }
+
+    if (showAddDialog) {
+        val emptyItem =
+            ItemCardDetail(
+                id = 0,
+                name = "",
+                categoryId = 0,
+                codeType = null,
+                codeContent = null,
+                codeImageId = null,
+                coverImageId = null,
+                createdAt = System.currentTimeMillis(),
+                updatedAt = System.currentTimeMillis(),
+                category = null,
+                codeImage = null,
+                coverImage = null,
+                images = emptyList(),
+                attributes = emptyList()
+            )
+        ItemEditDialog(
+            item = emptyItem,
+            onDismiss = { showAddDialog = false },
+            onSave = { newItem ->
+                itemViewModel.addNewItem(newItem)
+                showAddDialog = false
+            },
+            onAddImage = { /*TODO:  handle add image*/ },
+            onDeleteImage = { /*TODO: on delete*/ }
+        )
     }
 }

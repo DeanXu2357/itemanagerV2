@@ -7,15 +7,15 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.example.itemanagerv2.data.local.model.ItemCardDetail
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.example.itemanagerv2.data.local.entity.Image
 import com.example.itemanagerv2.data.local.entity.ItemAttributeValue
 import com.example.itemanagerv2.data.local.entity.ItemCategory
+import com.example.itemanagerv2.data.local.model.ItemCardDetail
 import com.example.itemanagerv2.ui.theme.BaseTheme
 import java.util.Date
 
@@ -35,27 +35,25 @@ fun MainPage(
 
     Scaffold(
         topBar = {
-            CustomTopAppBar(
-                title = "Asset Inventory",
-                onSearchClick = { /* TODO: 實現搜索功能 */ }
-            )
+            CustomTopAppBar(title = "Asset Inventory", onSearchClick = { /* TODO: 實現搜索功能 */ })
         },
-//        bottomBar = {
-//            NavigationBar {
-//                NavigationBarItem(
-//                    icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
-//                    label = { Text("Home") },
-//                    selected = selectedItem == 0,
-//                    onClick = { onSelectedItemChange(0) }
-//                )
-//                NavigationBarItem(
-//                    icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings") },
-//                    label = { Text("Settings") },
-//                    selected = selectedItem == 1,
-//                    onClick = { onSelectedItemChange(1) }
-//                )
-//            }
-//        },
+        //        bottomBar = {
+        //            NavigationBar {
+        //                NavigationBarItem(
+        //                    icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
+        //                    label = { Text("Home") },
+        //                    selected = selectedItem == 0,
+        //                    onClick = { onSelectedItemChange(0) }
+        //                )
+        //                NavigationBarItem(
+        //                    icon = { Icon(Icons.Filled.Settings, contentDescription =
+        // "Settings") },
+        //                    label = { Text("Settings") },
+        //                    selected = selectedItem == 1,
+        //                    onClick = { onSelectedItemChange(1) }
+        //                )
+        //            }
+        //        },
         floatingActionButton = {
             InsertFAB(
                 isExpanded = isFabExpanded,
