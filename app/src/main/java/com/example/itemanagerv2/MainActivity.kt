@@ -32,19 +32,17 @@ fun MainContent(itemViewModel: ItemViewModel) {
     var selectedItem by remember { mutableStateOf(0) }
     val cardDetails by itemViewModel.itemCardDetails.collectAsStateWithLifecycle()
     val isLoading by itemViewModel.isLoading.collectAsStateWithLifecycle(initialValue = false)
+    val categories by itemViewModel.categories.collectAsStateWithLifecycle()
     val gridState = rememberLazyGridState()
     var showEditDialog by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
-    var itemToEdit by remember { mutableStateOf<Item?>(null) }
     var itemCardDetailToEdit by remember { mutableStateOf<ItemCardDetail?>(null) }
 
     LaunchedEffect(gridState) {
-        //        itemViewModel.loadMoreItems()
         snapshotFlow {
             val layoutInfo = gridState.layoutInfo
             val totalItemsNumber = layoutInfo.totalItemsCount
             val lastVisibleItemIndex = (layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0) + 1
-
             lastVisibleItemIndex >
                     (totalItemsNumber - 5) // Start loading when 5 items away from the end
         }
@@ -74,25 +72,28 @@ fun MainContent(itemViewModel: ItemViewModel) {
         }
     )
 
-    if (showEditDialog && itemToEdit != null) {
+
+    if (showEditDialog && itemCardDetailToEdit != null) {
+        itemViewModel.ensureCategoriesLoaded()
         ItemEditDialog(
             item = itemCardDetailToEdit!!,
+            categories,
             onDismiss = {
                 showEditDialog = false
-                itemToEdit = null
+                itemCardDetailToEdit = null
             },
             onSave = { /*TODO: on save*/ },
-            onAddImage = { /*TODO: handle add image*/ },
-            onDeleteImage = { /*TODO: on delete*/ }
-        )
+            onAddImage = { /*TODO: handle add image*/ }
+        ) { /*TODO: on delete*/ }
     }
 
     if (showAddDialog) {
+        itemViewModel.ensureCategoriesLoaded()
         val emptyItem =
             ItemCardDetail(
                 id = 0,
                 name = "",
-                categoryId = 1,
+                categoryId = 0,
                 codeType = null,
                 codeContent = null,
                 codeImageId = null,
@@ -107,13 +108,13 @@ fun MainContent(itemViewModel: ItemViewModel) {
             )
         ItemEditDialog(
             item = emptyItem,
+            categories,
             onDismiss = { showAddDialog = false },
             onSave = { newItem ->
                 itemViewModel.addNewItem(newItem)
                 showAddDialog = false
             },
-            onAddImage = { /*TODO:  handle add image*/ },
-            onDeleteImage = { /*TODO: on delete*/ }
-        )
+            onAddImage = { /*TODO:  handle add image*/ }
+        ) { /*TODO: on delete*/ }
     }
 }

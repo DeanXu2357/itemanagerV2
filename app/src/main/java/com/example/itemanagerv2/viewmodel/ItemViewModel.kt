@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.itemanagerv2.data.local.entity.Image
 import com.example.itemanagerv2.data.local.entity.Item
 import com.example.itemanagerv2.data.local.entity.ItemAttributeValue
+import com.example.itemanagerv2.data.local.entity.ItemCategory
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
 import com.example.itemanagerv2.data.manager.ImageManager
 import com.example.itemanagerv2.data.local.repository.ItemRepository
@@ -30,11 +31,17 @@ class ItemViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
+    private val _categories = MutableStateFlow<List<ItemCategory>>(emptyList())
+    val categories: StateFlow<List<ItemCategory>> = _categories
+
+    private var hasLoadedCategories = false
+
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
     init {
         loadMoreItems()
+        loadCategories()
     }
 
     fun loadMoreItems() {
@@ -54,6 +61,15 @@ class ItemViewModel @Inject constructor(
             } finally {
                 _isLoading.value = false
             }
+        }
+    }
+
+    private fun loadCategories() {
+        viewModelScope.launch {
+            itemRepository.getAllCategories()
+                .collect { categoriesList ->
+                    _categories.value = categoriesList
+                }
         }
     }
 
@@ -145,6 +161,24 @@ class ItemViewModel @Inject constructor(
             } catch (e: Exception) {
                 _error.value = "Error adding image: ${e.message}"
                 Log.e("ItemViewModel", "Error adding image", e)
+            }
+        }
+    }
+
+    fun ensureCategoriesLoaded() {
+        if (!hasLoadedCategories) {
+            viewModelScope.launch {
+                try {
+                    itemRepository.getAllCategories()
+                        .collect { categoriesList ->
+                            val notSelectedCategory = ItemCategory(0, "Not Selected", Date(), Date())
+                            _categories.value = listOf(notSelectedCategory) + categoriesList
+                            hasLoadedCategories = true
+                        }
+                } catch (e: Exception) {
+                    _error.value = "Error loading categories: ${e.message}"
+                    Log.e("ItemViewModel", "Error loading categories", e)
+                }
             }
         }
     }

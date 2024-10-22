@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ItemEditDialog(
     item: ItemCardDetail,
+    categories: List<ItemCategory>,
     onDismiss: () -> Unit,
     onSave: (ItemCardDetail) -> Unit,
     onAddImage: () -> Unit,
@@ -31,6 +32,7 @@ fun ItemEditDialog(
     var editedItem by remember { mutableStateOf(item) } // TODO: handle if item is null
     var isDetailExpanded by remember { mutableStateOf(true) }
     var isQRCodeExpanded by remember { mutableStateOf(true) }
+    var selectedCategoryId by remember { mutableIntStateOf(item.categoryId) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -41,6 +43,13 @@ fun ItemEditDialog(
                 title = if (item.id == 0) "Add Item" else "Edit Item",
                 onDismiss = onDismiss,
                 onSave = {
+                    if (editedItem.categoryId == 0) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Item name and category are required")
+                        }
+                        return@FullScreenDialogTopBar
+                    }
+
                     if (editedItem.name.isNotBlank()) {
                         onSave(editedItem)
                         onDismiss()
@@ -72,21 +81,30 @@ fun ItemEditDialog(
                 onExpandToggle = { isDetailExpanded = !isDetailExpanded }
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
+                    val fieldModifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
+
                     OutlinedTextField(
                         value = editedItem.name,
                         onValueChange = { editedItem = editedItem.copy(name = it) },
                         label = { Text("Name") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp)
+                        modifier = fieldModifier
+                    )
+                    CategoryDropdown(
+                        categories = categories,
+                        selectedCategoryId = selectedCategoryId,
+                        onCategorySelected = { categoryId ->
+                            selectedCategoryId = categoryId
+                            editedItem = editedItem.copy(categoryId = categoryId)
+                        },
+                        modifier = fieldModifier
                     )
                     OutlinedTextField(
                         value = editedItem.codeType ?: "",
                         onValueChange = { editedItem = editedItem.copy(codeType = it) },
                         label = { Text("Barcode Type") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp)
+                        modifier = fieldModifier
                     )
                 }
             }
@@ -97,21 +115,20 @@ fun ItemEditDialog(
                 onExpandToggle = { isQRCodeExpanded = !isQRCodeExpanded }
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
+                    val fieldModifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
                     OutlinedTextField(
                         value = editedItem.codeType ?: "",
                         onValueChange = { editedItem = editedItem.copy(codeType = it) },
                         label = { Text("Barcode Type") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp)
+                        modifier = fieldModifier
                     )
                     OutlinedTextField(
                         value = editedItem.codeContent ?: "",
                         onValueChange = { editedItem = editedItem.copy(codeContent = it) },
                         label = { Text("Barcode Content") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp)
+                        modifier = fieldModifier
                     )
                     // Here you can add a composable to display the QR code image
                     // For example:
@@ -160,7 +177,6 @@ fun FullScreenDialogTopBar(title: String, onDismiss: () -> Unit, onSave: () -> U
                 .fillMaxSize()
                 .padding(horizontal = 4.dp),
         ) {
-            // 返回按鈕
             IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.CenterStart)) {
                 Icon(
                     imageVector = Icons.Filled.Close,
@@ -169,7 +185,6 @@ fun FullScreenDialogTopBar(title: String, onDismiss: () -> Unit, onSave: () -> U
                 )
             }
 
-            // 標題
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge,
@@ -177,7 +192,6 @@ fun FullScreenDialogTopBar(title: String, onDismiss: () -> Unit, onSave: () -> U
                 modifier = Modifier.align(Alignment.Center)
             )
 
-            // 保存按鈕
             TextButton(onClick = onSave, modifier = Modifier.align(Alignment.CenterEnd)) {
                 Text("Save", color = MaterialTheme.colorScheme.tertiary)
             }
@@ -188,6 +202,13 @@ fun FullScreenDialogTopBar(title: String, onDismiss: () -> Unit, onSave: () -> U
 @Preview(showBackground = true)
 @Composable
 fun ItemEditDialogPreview() {
+    val currentDate = Date()
+    val sampleCategories = listOf(
+        ItemCategory(id = 1, name = "Electronics", createdAt = currentDate, updatedAt = currentDate),
+        ItemCategory(id = 2, name = "Furniture", createdAt = currentDate, updatedAt = currentDate),
+        ItemCategory(id = 3, name = "Books", createdAt = currentDate, updatedAt = currentDate)
+    )
+
     BaseTheme {
         val currentDate = Date()
 
@@ -261,10 +282,11 @@ fun ItemEditDialogPreview() {
 
         ItemEditDialog(
             item = sampleItem,
-            onDismiss = { /* 預覽中不執行任何操作 */ },
-            onSave = { /* 預覽中不執行任何操作 */ },
-            onAddImage = { /* 預覽中不執行任何操作 */ },
-            onDeleteImage = { /* 預覽中不執行任何操作 */ }
+            categories = sampleCategories,
+            onDismiss = {},
+            onSave = {},
+            onAddImage = {},
+            onDeleteImage = {}
         )
     }
 }

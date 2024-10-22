@@ -77,4 +77,8 @@ class ItemRepository @Inject constructor(
     suspend fun getTotalItemCount(): Int {
         return itemDao.getTotalItemCount()
     }
+
+    suspend fun getAllCategories(): Flow<List<ItemCategory>> {
+        return itemCategoryDao.getAllCategories()
+    }
 }
