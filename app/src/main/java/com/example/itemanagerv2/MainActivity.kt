@@ -92,7 +92,7 @@ fun MainContent(itemViewModel: ItemViewModel) {
             ItemCardDetail(
                 id = 0,
                 name = "",
-                categoryId = 0,
+                categoryId = 1,
                 codeType = null,
                 codeContent = null,
                 codeImageId = null,
