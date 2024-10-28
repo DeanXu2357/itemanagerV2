@@ -84,6 +84,7 @@ fun MainContent(itemViewModel: ItemViewModel) {
             },
             onSave = { itemCardDetail->
                 itemViewModel.updateItemCardDetail(itemCardDetail)
+                itemViewModel.refreshItems()
                 showEditDialog = false
                 itemCardDetailToEdit = null
             },
@@ -116,6 +117,7 @@ fun MainContent(itemViewModel: ItemViewModel) {
             onDismiss = { showAddDialog = false },
             onSave = { newItem ->
                 itemViewModel.addNewItem(newItem)
+                itemViewModel.refreshItems()
                 showAddDialog = false
             },
             onAddImage = { /*TODO:  handle add image*/ }

@@ -116,8 +116,6 @@ class ItemViewModel @Inject constructor(
                         )
                     )
                 }
-
-                refreshItems()
             } catch (e: Exception) {
                 _error.value = "Error adding item: ${e.message}"
                 Log.e("ItemViewModel", "Error adding item", e)
@@ -125,7 +123,7 @@ class ItemViewModel @Inject constructor(
         }
     }
 
-    private fun refreshItems() {
+    fun refreshItems() {
         viewModelScope.launch {
             _itemCardDetails.value = emptyList()
             itemRepository.resetPagination()
@@ -218,9 +216,6 @@ class ItemViewModel @Inject constructor(
                         )
                     )
                 }
-
-                refreshItems()
-
             } catch (e: Exception) {
                 _error.value = "Error updating the item：${e.message}"
                 Log.e("ItemViewModel", "Error updating item", e)
