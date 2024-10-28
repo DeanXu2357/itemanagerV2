@@ -82,9 +82,13 @@ fun MainContent(itemViewModel: ItemViewModel) {
                 showEditDialog = false
                 itemCardDetailToEdit = null
             },
-            onSave = { /*TODO: on save*/ },
+            onSave = { itemCardDetail->
+                itemViewModel.updateItemCardDetail(itemCardDetail)
+                showEditDialog = false
+                itemCardDetailToEdit = null
+            },
             onAddImage = { /*TODO: handle add image*/ }
-        ) { /*TODO: on delete*/ }
+        ) {}
     }
 
     if (showAddDialog) {
@@ -115,6 +119,6 @@ fun MainContent(itemViewModel: ItemViewModel) {
                 showAddDialog = false
             },
             onAddImage = { /*TODO:  handle add image*/ }
-        ) { /*TODO: on delete*/ }
+        ) {}
     }
 }

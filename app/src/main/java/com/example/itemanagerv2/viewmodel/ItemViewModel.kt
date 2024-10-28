@@ -182,4 +182,51 @@ class ItemViewModel @Inject constructor(
             }
         }
     }
+
+    fun updateItemCardDetail(updatedItem: ItemCardDetail) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                _error.value = null
+
+                val item = Item(
+                    id = updatedItem.id,
+                    name = updatedItem.name,
+                    categoryId = updatedItem.categoryId,
+                    codeType = updatedItem.codeType,
+                    codeContent = updatedItem.codeContent,
+                    codeImageId = updatedItem.codeImageId,
+                    coverImageId = updatedItem.coverImageId,
+                    createdAt = updatedItem.createdAt,
+                    updatedAt = System.currentTimeMillis()
+                )
+
+                itemRepository.updateItem(item)
+
+                // delete all attribute values for the item
+                itemRepository.deleteItemAttributeValues(updatedItem.id)
+
+                updatedItem.attributes.forEach { attribute ->
+                    itemRepository.insertItemAttributeValue(
+                        ItemAttributeValue(
+                            id = 0,
+                            itemId = updatedItem.id,
+                            attributeId = attribute.attributeId,
+                            value = attribute.value,
+                            createdAt = Date(),
+                            updatedAt = Date()
+                        )
+                    )
+                }
+
+                refreshItems()
+
+            } catch (e: Exception) {
+                _error.value = "Error updating the item：${e.message}"
+                Log.e("ItemViewModel", "Error updating item", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 }
