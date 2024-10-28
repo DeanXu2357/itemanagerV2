@@ -23,11 +23,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContent {
-            BaseTheme {
-                MainContent(itemViewModel)
-            }
-        }
+        setContent { BaseTheme { MainContent(itemViewModel) } }
     }
 }
 
@@ -36,18 +32,17 @@ fun MainContent(itemViewModel: ItemViewModel) {
     var selectedItem by remember { mutableStateOf(0) }
     val cardDetails by itemViewModel.itemCardDetails.collectAsStateWithLifecycle()
     val isLoading by itemViewModel.isLoading.collectAsStateWithLifecycle(initialValue = false)
+    val categories by itemViewModel.categories.collectAsStateWithLifecycle()
     val gridState = rememberLazyGridState()
     var showEditDialog by remember { mutableStateOf(false) }
-    var itemToEdit by remember { mutableStateOf<Item?>(null) }
+    var showAddDialog by remember { mutableStateOf(false) }
     var itemCardDetailToEdit by remember { mutableStateOf<ItemCardDetail?>(null) }
 
     LaunchedEffect(gridState) {
-//        itemViewModel.loadMoreItems()
         snapshotFlow {
             val layoutInfo = gridState.layoutInfo
             val totalItemsNumber = layoutInfo.totalItemsCount
             val lastVisibleItemIndex = (layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0) + 1
-
             lastVisibleItemIndex >
                     (totalItemsNumber - 5) // Start loading when 5 items away from the end
         }
@@ -69,19 +64,57 @@ fun MainContent(itemViewModel: ItemViewModel) {
             itemCardDetailToEdit = cardDetail
             showEditDialog = true
         },
-        {},
-        {}
+        onManualAdd = {
+            showAddDialog = true
+        },
+        onScanAdd = {
+            /*TODO: handle scan add*/
+        }
     )
 
-    if (showEditDialog && itemToEdit != null) {
+
+    if (showEditDialog && itemCardDetailToEdit != null) {
+        itemViewModel.ensureCategoriesLoaded()
         ItemEditDialog(
             item = itemCardDetailToEdit!!,
+            categories,
             onDismiss = {
                 showEditDialog = false
-                itemToEdit = null
+                itemCardDetailToEdit = null
             },
-            {/*TODO: on save*/ },
-            {/*TODO: on delete*/ }
-        ) { }
+            onSave = { /*TODO: on save*/ },
+            onAddImage = { /*TODO: handle add image*/ }
+        ) { /*TODO: on delete*/ }
+    }
+
+    if (showAddDialog) {
+        itemViewModel.ensureCategoriesLoaded()
+        val emptyItem =
+            ItemCardDetail(
+                id = 0,
+                name = "",
+                categoryId = 0,
+                codeType = null,
+                codeContent = null,
+                codeImageId = null,
+                coverImageId = null,
+                createdAt = System.currentTimeMillis(),
+                updatedAt = System.currentTimeMillis(),
+                category = null,
+                codeImage = null,
+                coverImage = null,
+                images = emptyList(),
+                attributes = emptyList()
+            )
+        ItemEditDialog(
+            item = emptyItem,
+            categories,
+            onDismiss = { showAddDialog = false },
+            onSave = { newItem ->
+                itemViewModel.addNewItem(newItem)
+                showAddDialog = false
+            },
+            onAddImage = { /*TODO:  handle add image*/ }
+        ) { /*TODO: on delete*/ }
     }
 }
