@@ -8,7 +8,6 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.itemanagerv2.data.local.entity.Item
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
 import com.example.itemanagerv2.ui.component.ItemEditDialog
 import com.example.itemanagerv2.ui.component.MainPage

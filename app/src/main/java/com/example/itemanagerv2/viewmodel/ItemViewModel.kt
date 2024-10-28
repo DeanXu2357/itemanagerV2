@@ -184,9 +184,6 @@ class ItemViewModel @Inject constructor(
     fun updateItemCardDetail(updatedItem: ItemCardDetail) {
         viewModelScope.launch {
             try {
-                _isLoading.value = true
-                _error.value = null
-
                 val item = Item(
                     id = updatedItem.id,
                     name = updatedItem.name,
