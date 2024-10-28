@@ -116,8 +116,6 @@ class ItemViewModel @Inject constructor(
                         )
                     )
                 }
-
-                refreshItems()
             } catch (e: Exception) {
                 _error.value = "Error adding item: ${e.message}"
                 Log.e("ItemViewModel", "Error adding item", e)
@@ -125,7 +123,7 @@ class ItemViewModel @Inject constructor(
         }
     }
 
-    private fun refreshItems() {
+    fun refreshItems() {
         viewModelScope.launch {
             _itemCardDetails.value = emptyList()
             itemRepository.resetPagination()
@@ -179,6 +177,47 @@ class ItemViewModel @Inject constructor(
                     _error.value = "Error loading categories: ${e.message}"
                     Log.e("ItemViewModel", "Error loading categories", e)
                 }
+            }
+        }
+    }
+
+    fun updateItemCardDetail(updatedItem: ItemCardDetail) {
+        viewModelScope.launch {
+            try {
+                val item = Item(
+                    id = updatedItem.id,
+                    name = updatedItem.name,
+                    categoryId = updatedItem.categoryId,
+                    codeType = updatedItem.codeType,
+                    codeContent = updatedItem.codeContent,
+                    codeImageId = updatedItem.codeImageId,
+                    coverImageId = updatedItem.coverImageId,
+                    createdAt = updatedItem.createdAt,
+                    updatedAt = System.currentTimeMillis()
+                )
+
+                itemRepository.updateItem(item)
+
+                // delete all attribute values for the item
+                itemRepository.deleteItemAttributeValues(updatedItem.id)
+
+                updatedItem.attributes.forEach { attribute ->
+                    itemRepository.insertItemAttributeValue(
+                        ItemAttributeValue(
+                            id = 0,
+                            itemId = updatedItem.id,
+                            attributeId = attribute.attributeId,
+                            value = attribute.value,
+                            createdAt = Date(),
+                            updatedAt = Date()
+                        )
+                    )
+                }
+            } catch (e: Exception) {
+                _error.value = "Error updating the item：${e.message}"
+                Log.e("ItemViewModel", "Error updating item", e)
+            } finally {
+                _isLoading.value = false
             }
         }
     }

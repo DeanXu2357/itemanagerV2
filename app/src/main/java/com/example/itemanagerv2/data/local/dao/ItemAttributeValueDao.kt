@@ -23,4 +23,7 @@ interface ItemAttributeValueDao {
 
     @Query("SELECT * FROM item_attribute_values WHERE itemId IN (:itemIds)")
     suspend fun getAttributesForItems(itemIds: List<Int>): List<ItemAttributeValue>
+
+    @Query("DELETE FROM item_attribute_values WHERE itemId = :itemId")
+    suspend fun deleteByItemId(itemId: Int)
 }

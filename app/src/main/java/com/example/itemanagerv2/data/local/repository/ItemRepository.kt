@@ -21,6 +21,8 @@ class ItemRepository @Inject constructor(
 
     fun getItemCardDetails(): Flow<List<ItemCardDetail>> = flow {
         var hasMoreItems = true
+        val allItems = mutableListOf<ItemCardDetail>()
+
         while (hasMoreItems) {
             val newItems = itemDao.getPaginatedItems(pageSize, currentPage * pageSize)
             if (newItems.isNotEmpty()) {
@@ -48,7 +50,9 @@ class ItemRepository @Inject constructor(
                     )
                 }
 
-                emit(newItemCardDetails)
+                allItems.addAll(newItemCardDetails)
+                emit(allItems.toList())
+
                 currentPage++
                 hasMoreItems = newItems.size == pageSize
             } else {
@@ -80,5 +84,17 @@ class ItemRepository @Inject constructor(
 
     suspend fun getAllCategories(): Flow<List<ItemCategory>> {
         return itemCategoryDao.getAllCategories()
+    }
+
+    suspend fun updateItem(item: Item) {
+        itemDao.updateItem(item)
+    }
+
+    suspend fun updateItemAttributeValue(attributeValue: ItemAttributeValue) {
+        itemAttributeValueDao.updateAttributeValue(attributeValue)
+    }
+
+    suspend fun deleteItemAttributeValues(itemId: Int) {
+        itemAttributeValueDao.deleteByItemId(itemId)
     }
 }
