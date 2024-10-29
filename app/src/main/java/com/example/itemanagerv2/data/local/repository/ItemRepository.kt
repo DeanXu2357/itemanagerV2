@@ -1,15 +1,22 @@
 package com.example.itemanagerv2.data.local.repository
 
+import android.util.Log
+import androidx.room.withTransaction
+import com.example.itemanagerv2.data.local.AppDatabase
 import com.example.itemanagerv2.data.local.dao.*
 import com.example.itemanagerv2.data.local.entity.*
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class ItemRepository @Inject constructor(
+    private val database: AppDatabase,
     private val itemDao: ItemDao,
     private val itemCategoryDao: ItemCategoryDao,
     private val categoryAttributeDao: CategoryAttributeDao,
@@ -89,6 +96,40 @@ class ItemRepository @Inject constructor(
     suspend fun updateItem(item: Item) {
         itemDao.updateItem(item)
     }
+
+    suspend fun deleteItemWithRelations(itemId: Int) {
+        withContext(Dispatchers.IO) {
+            database.withTransaction {
+                // 1. Delete all attribute values for this item
+                itemAttributeValueDao.deleteByItemId(itemId)
+
+                // 2. Delete all images associated with this item
+                // First get all image IDs
+                val images = imageDao.getImagesByItemId(itemId)
+                // Delete actual image files
+                images.forEach { image ->
+                    deleteImageFile(image.filePath)
+                }
+                // Delete image records from database
+                imageDao.deleteByItemId(itemId)
+
+                // 3. Finally delete the item itself
+                itemDao.deleteById(itemId)
+            }
+        }
+    }
+
+    private fun deleteImageFile(filePath: String) {
+        try {
+            val file = File(filePath)
+            if (file.exists()) {
+                file.delete()
+            }
+        } catch (e: Exception) {
+            Log.e("ItemRepository", "Error deleting image file: $filePath", e)
+        }
+    }
+
 
     suspend fun updateItemAttributeValue(attributeValue: ItemAttributeValue) {
         itemAttributeValueDao.updateAttributeValue(attributeValue)

@@ -51,10 +51,12 @@ object DatabaseModule {
     fun provideItemCategoryDao(database: AppDatabase): ItemCategoryDao = database.itemCategoryDao()
 
     @Provides
-    fun provideCategoryAttributeDao(database: AppDatabase): CategoryAttributeDao = database.categoryAttributeDao()
+    fun provideCategoryAttributeDao(database: AppDatabase): CategoryAttributeDao =
+        database.categoryAttributeDao()
 
     @Provides
-    fun provideItemAttributeValueDao(database: AppDatabase): ItemAttributeValueDao = database.itemAttributeValueDao()
+    fun provideItemAttributeValueDao(database: AppDatabase): ItemAttributeValueDao =
+        database.itemAttributeValueDao()
 
     @Provides
     fun provideImageDao(database: AppDatabase): ImageDao = database.imageDao()
@@ -62,13 +64,21 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideItemRepository(
+        database: AppDatabase,
         itemDao: ItemDao,
         itemCategoryDao: ItemCategoryDao,
         categoryAttributeDao: CategoryAttributeDao,
         itemAttributeValueDao: ItemAttributeValueDao,
         imageDao: ImageDao
     ): ItemRepository {
-        return ItemRepository(itemDao, itemCategoryDao, categoryAttributeDao, itemAttributeValueDao, imageDao)
+        return ItemRepository(
+            database,
+            itemDao,
+            itemCategoryDao,
+            categoryAttributeDao,
+            itemAttributeValueDao,
+            imageDao
+        )
     }
 
     @Provides

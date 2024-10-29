@@ -16,6 +16,7 @@ import com.example.itemanagerv2.data.local.repository.ItemRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
@@ -36,12 +37,22 @@ class ItemViewModel @Inject constructor(
 
     private var hasLoadedCategories = false
 
+    private val _deleteStatus = MutableStateFlow<DeleteStatus>(DeleteStatus.Idle)
+    val deleteStatus: StateFlow<DeleteStatus> = _deleteStatus.asStateFlow()
+
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
     init {
         loadMoreItems()
         loadCategories()
+    }
+
+    sealed class DeleteStatus {
+        object Idle : DeleteStatus()
+        object Loading : DeleteStatus()
+        object Success : DeleteStatus()
+        data class Error(val message: String) : DeleteStatus()
     }
 
     fun loadMoreItems() {
@@ -218,6 +229,20 @@ class ItemViewModel @Inject constructor(
                 Log.e("ItemViewModel", "Error updating item", e)
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    fun deleteItem(itemCardDetail: ItemCardDetail) {
+        viewModelScope.launch {
+            try {
+                _deleteStatus.value = DeleteStatus.Loading
+                itemRepository.deleteItemWithRelations(itemCardDetail.id)
+                _deleteStatus.value = DeleteStatus.Success
+            } catch (e: Exception) {
+                // Handle error case
+                Log.e("ItemViewModel", "Error deleting item", e)
+                _deleteStatus.value = DeleteStatus.Error(e.message ?: "Unknown error")
             }
         }
     }

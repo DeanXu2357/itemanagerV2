@@ -14,6 +14,9 @@ interface ItemDao {
 
     @Delete suspend fun deleteItem(item: Item)
 
+    @Query("DELETE FROM items WHERE id = :itemId")
+    suspend fun deleteById(itemId: Int)
+
     @Query("SELECT * FROM items WHERE id = :id") suspend fun getItemById(id: Int): Item?
 
     @Query("SELECT * FROM items ORDER BY id DESC LIMIT :limit OFFSET :offset")

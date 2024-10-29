@@ -66,11 +66,12 @@ fun MainContent(itemViewModel: ItemViewModel) {
         onManualAdd = {
             showAddDialog = true
         },
-        onScanAdd = {
-            /*TODO: handle scan add*/
+        onScanAdd = {},
+        onDeleteCard = { cardDetail ->
+            itemViewModel.deleteItem(cardDetail)
+            itemViewModel.refreshItems()
         }
     )
-
 
     if (showEditDialog && itemCardDetailToEdit != null) {
         itemViewModel.ensureCategoriesLoaded()

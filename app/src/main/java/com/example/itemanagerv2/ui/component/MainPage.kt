@@ -28,7 +28,8 @@ fun MainPage(
     onLoadMore: () -> Unit,
     onEditCard: (ItemCardDetail) -> Unit,
     onManualAdd: () -> Unit,
-    onScanAdd: () -> Unit
+    onScanAdd: () -> Unit,
+    onDeleteCard: (ItemCardDetail) -> Unit
 ) {
     val gridState = rememberLazyGridState()
     var isFabExpanded by remember { mutableStateOf(false) }
@@ -78,7 +79,7 @@ fun MainPage(
                         cardDetail = item,
                         onEdit = { onEditCard(item) },
                         onCopy = { /* TODO: 實現複製功能 */ },
-                        onDelete = { /* TODO: 實現刪除功能 */ }
+                        onDelete = { onDeleteCard(item) }
                     )
                 }
                 item(key = "loading_indicator") {
@@ -199,7 +200,8 @@ fun MainPagePreview() {
             onLoadMore = { },
             onEditCard = { },
             onManualAdd = { },
-            onScanAdd = { }
+            onScanAdd = { },
+            onDeleteCard = { },
         )
     }
 }
