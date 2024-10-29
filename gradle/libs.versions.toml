@@ -43,6 +43,7 @@ testJunit = "1.1.5"
 testEspressoCore = "3.6.1"
 hiltAndroid = "2.52"
 hiltCompiler = "2.52"
+accompanistSwiperefresh = "0.36.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -88,6 +89,7 @@ androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espres
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hiltAndroid" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hiltCompiler" }
 hilt-gradle-plugin = { group = "com.google.dagger", name = "hilt-android-gradle-plugin", version.ref = "hiltAndroid" }
+accompanist-swiperefresh = { group = "com.google.accompanist", name = "accompanist-swiperefresh", version.ref = "accompanistSwiperefresh" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

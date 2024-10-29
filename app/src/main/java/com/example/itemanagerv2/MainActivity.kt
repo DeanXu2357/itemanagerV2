@@ -14,6 +14,8 @@ import com.example.itemanagerv2.ui.component.MainPage
 import com.example.itemanagerv2.ui.theme.BaseTheme
 import com.example.itemanagerv2.viewmodel.ItemViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -36,6 +38,7 @@ fun MainContent(itemViewModel: ItemViewModel) {
     var showEditDialog by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
     var itemCardDetailToEdit by remember { mutableStateOf<ItemCardDetail?>(null) }
+    val swipeRefreshState = rememberSwipeRefreshState(isRefreshing = isLoading)
 
     LaunchedEffect(gridState) {
         snapshotFlow {
