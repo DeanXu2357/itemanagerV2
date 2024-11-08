@@ -43,7 +43,7 @@ fun CategoryDropdown(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = selectedCategory?.name ?: "",
+                    text = selectedCategory?.name ?: "No category selected",
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Icon(
