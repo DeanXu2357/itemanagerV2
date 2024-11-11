@@ -180,8 +180,6 @@ class ItemViewModel @Inject constructor(
                 try {
                     itemRepository.getAllCategories()
                         .collect { categoriesList ->
-                            val notSelectedCategory = ItemCategory(0, "Not Selected", Date(), Date())
-                            _categories.value = listOf(notSelectedCategory) + categoriesList
                             hasLoadedCategories = true
                         }
                 } catch (e: Exception) {
