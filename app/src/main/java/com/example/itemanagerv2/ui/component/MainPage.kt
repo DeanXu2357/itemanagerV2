@@ -1,13 +1,18 @@
 package com.example.itemanagerv2.ui.component
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -18,12 +23,6 @@ import com.example.itemanagerv2.data.local.entity.ItemCategory
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
 import com.example.itemanagerv2.ui.theme.BaseTheme
 import java.util.Date
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
 
 @ExperimentalMaterial3Api
 @Composable
@@ -42,8 +41,6 @@ fun MainPage(
     val gridState = rememberLazyGridState()
     var isFabExpanded by remember { mutableStateOf(false) }
     val refreshState = rememberPullToRefreshState()
-    var isRefreshing by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -63,15 +60,12 @@ fun MainPage(
                 .fillMaxSize()
                 .padding(innerPadding),
             state = refreshState,
-            isRefreshing = isRefreshing,
+            isRefreshing = isLoading,
             onRefresh = {
-                isRefreshing = true
-                coroutineScope.launch {
-                    onRefresh()
-                    isRefreshing = false
-                }
+                Log.println(Log.INFO, "isLoading", isLoading.toString())
+                onRefresh()
+                Log.println(Log.INFO, "isLoading", isLoading.toString())
             }
-
         ) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),

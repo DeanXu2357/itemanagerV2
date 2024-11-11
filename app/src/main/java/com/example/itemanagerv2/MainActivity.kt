@@ -38,7 +38,7 @@ fun MainContent(itemViewModel: ItemViewModel) {
     var showEditDialog by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
     var itemCardDetailToEdit by remember { mutableStateOf<ItemCardDetail?>(null) }
-    
+
     MainPage(
         cardDetails = cardDetails,
         isLoading = isLoading,
@@ -88,7 +88,7 @@ fun MainContent(itemViewModel: ItemViewModel) {
                 showEditDialog = false
                 itemCardDetailToEdit = null
             },
-            onSave = { itemCardDetail->
+            onSave = { itemCardDetail ->
                 itemViewModel.updateItemCardDetail(itemCardDetail)
                 itemViewModel.refreshItems()
                 showEditDialog = false
