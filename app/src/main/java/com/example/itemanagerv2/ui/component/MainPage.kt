@@ -18,7 +18,14 @@ import com.example.itemanagerv2.data.local.entity.ItemCategory
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
 import com.example.itemanagerv2.ui.theme.BaseTheme
 import java.util.Date
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
+@ExperimentalMaterial3Api
 @Composable
 fun MainPage(
     cardDetails: List<ItemCardDetail>,
@@ -29,32 +36,19 @@ fun MainPage(
     onEditCard: (ItemCardDetail) -> Unit,
     onManualAdd: () -> Unit,
     onScanAdd: () -> Unit,
-    onDeleteCard: (ItemCardDetail) -> Unit
+    onDeleteCard: (ItemCardDetail) -> Unit,
+    onRefresh: () -> Unit
 ) {
     val gridState = rememberLazyGridState()
     var isFabExpanded by remember { mutableStateOf(false) }
+    val refreshState = rememberPullToRefreshState()
+    var isRefreshing by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
             CustomTopAppBar(title = "Asset Inventory", onSearchClick = { /* TODO: 實現搜索功能 */ })
         },
-        //        bottomBar = {
-        //            NavigationBar {
-        //                NavigationBarItem(
-        //                    icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
-        //                    label = { Text("Home") },
-        //                    selected = selectedItem == 0,
-        //                    onClick = { onSelectedItemChange(0) }
-        //                )
-        //                NavigationBarItem(
-        //                    icon = { Icon(Icons.Filled.Settings, contentDescription =
-        // "Settings") },
-        //                    label = { Text("Settings") },
-        //                    selected = selectedItem == 1,
-        //                    onClick = { onSelectedItemChange(1) }
-        //                )
-        //            }
-        //        },
         floatingActionButton = {
             InsertFAB(
                 isExpanded = isFabExpanded,
@@ -64,10 +58,20 @@ fun MainPage(
             )
         }
     ) { innerPadding ->
-        Box(
+        PullToRefreshBox(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(innerPadding),
+            state = refreshState,
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                isRefreshing = true
+                coroutineScope.launch {
+                    onRefresh()
+                    isRefreshing = false
+                }
+            }
+
         ) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
@@ -98,110 +102,111 @@ fun MainPage(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
 fun MainPagePreview() {
-    val itemCategoryDummy = ItemCategory(
-        id = 1,
-        name = "Sample Category",
-        createdAt = Date(),
-        updatedAt = Date()
-    )
-    val imageDummy = Image(
-        id = 1,
-        filePath = "https://example.com/image1.jpg",
-        itemId = 1,
-        order = 0,
-        content = "Sample image 1",
-        createdAt = Date(),
-        updatedAt = Date()
-    )
-    val attributeDummy = ItemAttributeValue(
-        id = 1,
-        value = "Sample Value",
-        itemId = 1,
-        createdAt = Date(),
-        updatedAt = Date(),
-        attributeId = 1
-    )
-    val previewCardDetails = listOf(
-        ItemCardDetail(
+    val itemCategoryDummy =
+        ItemCategory(id = 1, name = "Sample Category", createdAt = Date(), updatedAt = Date())
+    val imageDummy =
+        Image(
             id = 1,
-            name = "Sample Item 1",
-            coverImage = null,
-            categoryId = 1,
-            codeType = "QR",
-            codeContent = "Sample content 1",
-            codeImageId = 0,
-            coverImageId = 0,
-            createdAt = 0,
-            updatedAt = 0,
-            category = itemCategoryDummy,
-            codeImage = imageDummy,
-            images = listOf(imageDummy),
-            attributes = listOf(attributeDummy),
-        ),
-        ItemCardDetail(
-            id = 2,
-            name = "Sample Item 2",
-            coverImage = null,
-            categoryId = 2,
-            codeType = "Barcode",
-            codeContent = "Sample content 2",
-            codeImageId = 0,
-            coverImageId = 0,
-            createdAt = 0,
-            updatedAt = 0,
-            category = itemCategoryDummy,
-            codeImage = imageDummy,
-            images = listOf(imageDummy),
-            attributes = listOf(attributeDummy),
-        ),
-        ItemCardDetail(
-            id = 3,
-            name = "Sample Item 3",
-            coverImage = null,
-            categoryId = 1,
-            codeType = "QR",
-            codeContent = "Sample content 3",
-            codeImageId = 0,
-            coverImageId = 0,
-            createdAt = 0,
-            updatedAt = 0,
-            category = itemCategoryDummy,
-            codeImage = imageDummy,
-            images = listOf(imageDummy),
-            attributes = listOf(attributeDummy),
-        ),
-        ItemCardDetail(
-            id = 4,
-            name = "Sample Item 4",
-            coverImage = null,
-            categoryId = 2,
-            codeType = "Barcode",
-            codeContent = "Sample content 4",
-            codeImageId = 0,
-            coverImageId = 0,
-            createdAt = 0,
-            updatedAt = 0,
-            category = itemCategoryDummy,
-            codeImage = imageDummy,
-            images = listOf(imageDummy),
-            attributes = listOf(attributeDummy),
+            filePath = "https://example.com/image1.jpg",
+            itemId = 1,
+            order = 0,
+            content = "Sample image 1",
+            createdAt = Date(),
+            updatedAt = Date()
         )
-    )
+    val attributeDummy =
+        ItemAttributeValue(
+            id = 1,
+            value = "Sample Value",
+            itemId = 1,
+            createdAt = Date(),
+            updatedAt = Date(),
+            attributeId = 1
+        )
+    val previewCardDetails =
+        listOf(
+            ItemCardDetail(
+                id = 1,
+                name = "Sample Item 1",
+                coverImage = null,
+                categoryId = 1,
+                codeType = "QR",
+                codeContent = "Sample content 1",
+                codeImageId = 0,
+                coverImageId = 0,
+                createdAt = 0,
+                updatedAt = 0,
+                category = itemCategoryDummy,
+                codeImage = imageDummy,
+                images = listOf(imageDummy),
+                attributes = listOf(attributeDummy),
+            ),
+            ItemCardDetail(
+                id = 2,
+                name = "Sample Item 2",
+                coverImage = null,
+                categoryId = 2,
+                codeType = "Barcode",
+                codeContent = "Sample content 2",
+                codeImageId = 0,
+                coverImageId = 0,
+                createdAt = 0,
+                updatedAt = 0,
+                category = itemCategoryDummy,
+                codeImage = imageDummy,
+                images = listOf(imageDummy),
+                attributes = listOf(attributeDummy),
+            ),
+            ItemCardDetail(
+                id = 3,
+                name = "Sample Item 3",
+                coverImage = null,
+                categoryId = 1,
+                codeType = "QR",
+                codeContent = "Sample content 3",
+                codeImageId = 0,
+                coverImageId = 0,
+                createdAt = 0,
+                updatedAt = 0,
+                category = itemCategoryDummy,
+                codeImage = imageDummy,
+                images = listOf(imageDummy),
+                attributes = listOf(attributeDummy),
+            ),
+            ItemCardDetail(
+                id = 4,
+                name = "Sample Item 4",
+                coverImage = null,
+                categoryId = 2,
+                codeType = "Barcode",
+                codeContent = "Sample content 4",
+                codeImageId = 0,
+                coverImageId = 0,
+                createdAt = 0,
+                updatedAt = 0,
+                category = itemCategoryDummy,
+                codeImage = imageDummy,
+                images = listOf(imageDummy),
+                attributes = listOf(attributeDummy),
+            )
+        )
 
     BaseTheme {
         MainPage(
             cardDetails = previewCardDetails,
             isLoading = false,
             selectedItem = 0,
-            onSelectedItemChange = { },
-            onLoadMore = { },
-            onEditCard = { },
-            onManualAdd = { },
-            onScanAdd = { },
-            onDeleteCard = { },
+            onSelectedItemChange = {},
+            onLoadMore = {},
+            onEditCard = {},
+            onManualAdd = {},
+            onScanAdd = {},
+            onDeleteCard = {},
+            onRefresh = {}
         )
     }
 }

@@ -74,7 +74,6 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.hilt.android)
-    implementation(libs.accompanist.swiperefresh)
     ksp(libs.hilt.compiler)
     ksp(libs.androidx.room.compiler)
     debugImplementation(libs.androidx.ui.tooling)
