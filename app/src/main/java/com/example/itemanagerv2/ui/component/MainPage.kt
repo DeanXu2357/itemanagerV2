@@ -62,9 +62,7 @@ fun MainPage(
             state = refreshState,
             isRefreshing = isLoading,
             onRefresh = {
-                Log.println(Log.INFO, "isLoading", isLoading.toString())
                 onRefresh()
-                Log.println(Log.INFO, "isLoading", isLoading.toString())
             }
         ) {
             LazyVerticalGrid(

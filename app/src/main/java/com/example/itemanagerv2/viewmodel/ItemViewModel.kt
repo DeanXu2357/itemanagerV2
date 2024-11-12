@@ -1,5 +1,3 @@
-// File: app/src/main/java/com/example/itemanagerv2/viewmodel/ItemViewModel.kt
-
 package com.example.itemanagerv2.viewmodel
 
 import android.graphics.Bitmap
@@ -14,14 +12,13 @@ import com.example.itemanagerv2.data.local.model.ItemCardDetail
 import com.example.itemanagerv2.data.local.repository.ItemRepository
 import com.example.itemanagerv2.data.manager.ImageManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import java.util.Date
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @HiltViewModel
 class ItemViewModel
@@ -143,6 +140,7 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
         _isLoading.value = true
 
         viewModelScope.launch {
+            delay(50)
             try {
                 _error.value = null
                 _itemCardDetails.value = emptyList()
@@ -152,15 +150,12 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
                 itemRepository.getItemCardDetails().collect { newItems ->
                     _itemCardDetails.value = newItems
                 }
-//                val newItems = itemRepository.getItemCardDetails().first()
-//                _itemCardDetails.value = newItems
-                Log.println(Log.INFO, "isLoading after first", "after collect , while isLoading = ${_isLoading.value}")
             } catch (e: Exception) {
                 _error.value = "Error refreshing items: ${e.message}"
                 Log.e("ItemViewModel", "Error refreshing items", e)
             } finally {
                 _isLoading.value = false
-                Log.println(Log.INFO, "ItemViewModel", "Items refreshed finally, isLoading: ${_isLoading.value}")
+                Log.println(Log.INFO, "ItemViewModel", "Items refreshed")
             }
         }
     }
@@ -182,12 +177,8 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
             try {
                 val filePath = imageManager.saveImage(bitmap)
                 val image = Image(
-                    filePath = filePath,
-                    itemId = itemId,
-                    order = 0, // TODO: Set the correct order
-                    content = null,
-                    createdAt = Date(),
-                    updatedAt = Date()
+                    filePath = filePath, itemId = itemId, order = 0, // TODO: Set the correct order
+                    content = null, createdAt = Date(), updatedAt = Date()
                 )
                 itemRepository.insertImage(image)
             } catch (e: Exception) {
@@ -215,18 +206,17 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
     fun updateItemCardDetail(updatedItem: ItemCardDetail) {
         viewModelScope.launch {
             try {
-                val item =
-                    Item(
-                        id = updatedItem.id,
-                        name = updatedItem.name,
-                        categoryId = updatedItem.categoryId,
-                        codeType = updatedItem.codeType,
-                        codeContent = updatedItem.codeContent,
-                        codeImageId = updatedItem.codeImageId,
-                        coverImageId = updatedItem.coverImageId,
-                        createdAt = updatedItem.createdAt,
-                        updatedAt = System.currentTimeMillis()
-                    )
+                val item = Item(
+                    id = updatedItem.id,
+                    name = updatedItem.name,
+                    categoryId = updatedItem.categoryId,
+                    codeType = updatedItem.codeType,
+                    codeContent = updatedItem.codeContent,
+                    codeImageId = updatedItem.codeImageId,
+                    coverImageId = updatedItem.coverImageId,
+                    createdAt = updatedItem.createdAt,
+                    updatedAt = System.currentTimeMillis()
+                )
 
                 itemRepository.updateItem(item)
 
