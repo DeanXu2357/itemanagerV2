@@ -1,5 +1,3 @@
-// File: app/src/main/java/com/example/itemanagerv2/viewmodel/ItemViewModel.kt
-
 package com.example.itemanagerv2.viewmodel
 
 import android.graphics.Bitmap
@@ -11,29 +9,30 @@ import com.example.itemanagerv2.data.local.entity.Item
 import com.example.itemanagerv2.data.local.entity.ItemAttributeValue
 import com.example.itemanagerv2.data.local.entity.ItemCategory
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
-import com.example.itemanagerv2.data.manager.ImageManager
 import com.example.itemanagerv2.data.local.repository.ItemRepository
+import com.example.itemanagerv2.data.manager.ImageManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
+import java.util.Date
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.util.Date
-import javax.inject.Inject
 
 @HiltViewModel
-class ItemViewModel @Inject constructor(
-    private val itemRepository: ItemRepository,
-    private val imageManager: ImageManager
-) : ViewModel() {
+class ItemViewModel
+@Inject
+constructor(private val itemRepository: ItemRepository, private val imageManager: ImageManager) :
+    ViewModel() {
     private val _itemCardDetails = MutableStateFlow<List<ItemCardDetail>>(emptyList())
-    val itemCardDetails: StateFlow<List<ItemCardDetail>> = _itemCardDetails
+    val itemCardDetails: StateFlow<List<ItemCardDetail>> = _itemCardDetails.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _categories = MutableStateFlow<List<ItemCategory>>(emptyList())
-    val categories: StateFlow<List<ItemCategory>> = _categories
+    val categories: StateFlow<List<ItemCategory>> = _categories.asStateFlow()
 
     private var hasLoadedCategories = false
 
@@ -41,7 +40,7 @@ class ItemViewModel @Inject constructor(
     val deleteStatus: StateFlow<DeleteStatus> = _deleteStatus.asStateFlow()
 
     private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error
+    val error: StateFlow<String?> = _error.asStateFlow()
 
     init {
         loadMoreItems()
@@ -61,26 +60,27 @@ class ItemViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                _error.value = null
-                itemRepository.getItemCardDetails()
-                    .collect { newItems ->
-                        _itemCardDetails.value = _itemCardDetails.value + newItems
-                    }
+                Log.d("ItemViewModel", "Start loading items")
+
+                itemRepository.getItemCardDetails().collect { newItems ->
+                    Log.d("ItemViewModel", "Get new items, counts: ${newItems.size}")
+                    _itemCardDetails.value = newItems
+                }
             } catch (e: Exception) {
                 _error.value = "Error loading items: ${e.message}"
-                Log.e("ItemViewModel", "Error loading items", e)
+                Log.e("ItemViewModel", "Loading items failed: ", e)
             } finally {
                 _isLoading.value = false
+                Log.d("ItemViewModel", "Loading complete，counts: ${_itemCardDetails.value.size}")
             }
         }
     }
 
     private fun loadCategories() {
         viewModelScope.launch {
-            itemRepository.getAllCategories()
-                .collect { categoriesList ->
-                    _categories.value = categoriesList
-                }
+            itemRepository.getAllCategories().collect { categoriesList ->
+                _categories.value = categoriesList
+            }
         }
     }
 
@@ -135,10 +135,30 @@ class ItemViewModel @Inject constructor(
     }
 
     fun refreshItems() {
+        if (_isLoading.value) return
+
+        _isLoading.value = true
+        Log.println(Log.INFO, "ItemViewModel", "isLoading: ${_isLoading.value}")
+
         viewModelScope.launch {
-            _itemCardDetails.value = emptyList()
-            itemRepository.resetPagination()
-            loadMoreItems()
+            try {
+                delay(500)
+                _error.value = null
+                _itemCardDetails.value = emptyList()
+                itemRepository.resetPagination()
+
+                Log.println(Log.INFO, "ItemViewModel", "Refreshing items")
+                itemRepository.getItemCardDetails().collect { newItems ->
+                    _itemCardDetails.value = newItems
+                }
+            } catch (e: Exception) {
+                _error.value = "Error refreshing items: ${e.message}"
+                Log.e("ItemViewModel", "Error refreshing items", e)
+            } finally {
+                _isLoading.value = false
+                Log.println(Log.INFO, "ItemViewModel", "Items refreshed")
+                Log.println(Log.INFO, "ItemViewModel", "isLoading: ${_isLoading.value}")
+            }
         }
     }
 
@@ -159,12 +179,8 @@ class ItemViewModel @Inject constructor(
             try {
                 val filePath = imageManager.saveImage(bitmap)
                 val image = Image(
-                    filePath = filePath,
-                    itemId = itemId,
-                    order = 0, // TODO: Set the correct order
-                    content = null,
-                    createdAt = Date(),
-                    updatedAt = Date()
+                    filePath = filePath, itemId = itemId, order = 0, // TODO: Set the correct order
+                    content = null, createdAt = Date(), updatedAt = Date()
                 )
                 itemRepository.insertImage(image)
             } catch (e: Exception) {
@@ -178,10 +194,9 @@ class ItemViewModel @Inject constructor(
         if (!hasLoadedCategories) {
             viewModelScope.launch {
                 try {
-                    itemRepository.getAllCategories()
-                        .collect { categoriesList ->
-                            hasLoadedCategories = true
-                        }
+                    itemRepository.getAllCategories().collect { categoriesList ->
+                        hasLoadedCategories = true
+                    }
                 } catch (e: Exception) {
                     _error.value = "Error loading categories: ${e.message}"
                     Log.e("ItemViewModel", "Error loading categories", e)
