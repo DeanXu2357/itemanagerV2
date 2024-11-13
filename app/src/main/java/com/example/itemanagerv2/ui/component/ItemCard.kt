@@ -87,21 +87,21 @@ fun ItemCard(
                 }
             ) {
                 DropdownMenuItem(
-                    text = { Text("編輯") },
+                    text = { Text("Edit") },
                     onClick = {
                         onEdit()
                         showMenu = false
                     }
                 )
                 DropdownMenuItem(
-                    text = { Text("複製") },
+                    text = { Text("Duplicate") },
                     onClick = {
                         onCopy()
                         showMenu = false
                     }
                 )
                 DropdownMenuItem(
-                    text = { Text("刪除") },
+                    text = { Text("Delete") },
                     onClick = {
                         onDelete()
                         showMenu = false

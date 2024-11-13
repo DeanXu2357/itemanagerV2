@@ -5,9 +5,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
@@ -28,40 +26,16 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainContent(itemViewModel: ItemViewModel) {
     var selectedItem by remember { mutableStateOf(0) }
     val cardDetails by itemViewModel.itemCardDetails.collectAsStateWithLifecycle()
     val isLoading by itemViewModel.isLoading.collectAsStateWithLifecycle(initialValue = false)
     val categories by itemViewModel.categories.collectAsStateWithLifecycle()
+    val gridState = rememberLazyGridState()
     var showEditDialog by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
     var itemCardDetailToEdit by remember { mutableStateOf<ItemCardDetail?>(null) }
-
-    MainPage(
-        cardDetails = cardDetails,
-        isLoading = isLoading,
-        selectedItem = selectedItem,
-        onSelectedItemChange = { selectedItem = it },
-        onLoadMore = { itemViewModel.loadMoreItems() },
-        onEditCard = { cardDetail ->
-            itemCardDetailToEdit = cardDetail
-            showEditDialog = true
-        },
-        onManualAdd = { showAddDialog = true },
-        onScanAdd = {},
-        onDeleteCard = { cardDetail ->
-            itemViewModel.deleteItem(cardDetail)
-            itemViewModel.refreshItems()
-        },
-        onRefresh = {
-            itemViewModel.refreshItems()
-        }
-    )
-
-    // 其餘對話框程式碼保持不變...
-    val gridState = rememberLazyGridState()
 
     LaunchedEffect(gridState) {
         snapshotFlow {
@@ -78,6 +52,28 @@ fun MainContent(itemViewModel: ItemViewModel) {
                 }
             }
     }
+
+    MainPage(
+        cardDetails = cardDetails,
+        categories = categories, // 傳入類別列表
+        isLoading = isLoading,
+        selectedItem = selectedItem,
+        onSelectedItemChange = { selectedItem = it },
+        onLoadMore = { itemViewModel.loadMoreItems() },
+        onEditCard = { cardDetail ->
+            itemCardDetailToEdit = cardDetail
+            showEditDialog = true
+        },
+        onManualAdd = { showAddDialog = true },
+        onScanAdd = {},
+        onDeleteCard = { cardDetail ->
+            itemViewModel.deleteItem(cardDetail)
+            itemViewModel.refreshItems()
+        },
+        onCategorySelected = { category ->
+            // 處理類別選擇邏輯
+        }
+    )
 
     if (showEditDialog && itemCardDetailToEdit != null) {
         itemViewModel.ensureCategoriesLoaded()
