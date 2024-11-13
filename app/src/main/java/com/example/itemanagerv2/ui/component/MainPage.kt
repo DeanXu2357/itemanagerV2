@@ -40,7 +40,6 @@ fun MainPage(
 ) {
     val gridState = rememberLazyGridState()
     var isFabExpanded by remember { mutableStateOf(false) }
-    val refreshState = rememberPullToRefreshState()
 
     Scaffold(
         topBar = {
@@ -59,16 +58,13 @@ fun MainPage(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            state = refreshState,
             isRefreshing = isLoading,
-            onRefresh = {
-                onRefresh()
-            }
+            onRefresh = onRefresh
         ) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 state = gridState,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             ) {
                 items(cardDetails) { item ->
                     ItemCard(

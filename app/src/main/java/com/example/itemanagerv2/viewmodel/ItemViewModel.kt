@@ -138,10 +138,11 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
         if (_isLoading.value) return
 
         _isLoading.value = true
+        Log.println(Log.INFO, "ItemViewModel", "isLoading: ${_isLoading.value}")
 
         viewModelScope.launch {
-            delay(50)
             try {
+                delay(500)
                 _error.value = null
                 _itemCardDetails.value = emptyList()
                 itemRepository.resetPagination()
@@ -156,6 +157,7 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
             } finally {
                 _isLoading.value = false
                 Log.println(Log.INFO, "ItemViewModel", "Items refreshed")
+                Log.println(Log.INFO, "ItemViewModel", "isLoading: ${_isLoading.value}")
             }
         }
     }
