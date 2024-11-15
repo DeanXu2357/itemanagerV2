@@ -144,11 +144,11 @@ fun CategoryListDialog(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.PlusOne,
-                                    contentDescription = "新增類別"
+                                    contentDescription = "Add a new category"
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "新增類別",
+                                    text = "Add a new category",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }

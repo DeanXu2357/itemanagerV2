@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -140,5 +141,15 @@ class ItemRepository @Inject constructor(
 
     suspend fun deleteItemAttributeValues(itemId: Int) {
         itemAttributeValueDao.deleteByItemId(itemId)
+    }
+
+    suspend fun insertCategory(name: String): Long {
+        val category = ItemCategory(
+            id = 0,
+            name = name,
+            createdAt = Date(),
+            updatedAt = Date()
+        )
+        return itemCategoryDao.insertCategory(category)
     }
 }
