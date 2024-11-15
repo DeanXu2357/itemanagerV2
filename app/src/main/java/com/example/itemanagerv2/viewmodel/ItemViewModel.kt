@@ -7,9 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.itemanagerv2.data.local.entity.Image
 import com.example.itemanagerv2.data.local.entity.Item
 import com.example.itemanagerv2.data.local.entity.ItemAttributeValue
-import com.example.itemanagerv2.data.local.entity.ItemCategory
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
-import com.example.itemanagerv2.data.local.model.ItemCategoryNavArg
+import com.example.itemanagerv2.data.local.model.ItemCategoryArg
 import com.example.itemanagerv2.data.local.model.toNavArg
 import com.example.itemanagerv2.data.local.repository.ItemRepository
 import com.example.itemanagerv2.data.manager.ImageManager
@@ -33,8 +32,8 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _categories = MutableStateFlow<List<ItemCategoryNavArg>>(emptyList())
-    val categories: StateFlow<List<ItemCategoryNavArg>> = _categories.asStateFlow()
+    private val _categories = MutableStateFlow<List<ItemCategoryArg>>(emptyList())
+    val categories: StateFlow<List<ItemCategoryArg>> = _categories.asStateFlow()
 
     private var hasLoadedCategories = false
 

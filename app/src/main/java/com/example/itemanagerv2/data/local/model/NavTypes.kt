@@ -5,12 +5,12 @@ import com.example.itemanagerv2.data.local.entity.ItemCategory
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
-data class ItemCategoryNavArg(
+data class ItemCategoryArg(
     val id: Int,
     val name: String
 ) : Parcelable
 
-fun ItemCategory.toNavArg() = ItemCategoryNavArg(
+fun ItemCategory.toNavArg() = ItemCategoryArg(
     id = id,
     name = name
 )

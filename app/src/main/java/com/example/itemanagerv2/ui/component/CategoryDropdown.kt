@@ -15,11 +15,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.itemanagerv2.data.local.model.ItemCategoryNavArg
+import com.example.itemanagerv2.data.local.model.ItemCategoryArg
 
 @Composable
 fun CategoryDropdown(
-    categories: List<ItemCategoryNavArg>,
+    categories: List<ItemCategoryArg>,
     selectedCategoryId: Int?,
     onCategorySelected: (Int) -> Unit,
     modifier: Modifier = Modifier

@@ -24,9 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.itemanagerv2.data.local.entity.Image
 import com.example.itemanagerv2.data.local.entity.ItemAttributeValue
-import com.example.itemanagerv2.data.local.entity.ItemCategory
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
-import com.example.itemanagerv2.data.local.model.ItemCategoryNavArg
+import com.example.itemanagerv2.data.local.model.ItemCategoryArg
 import com.example.itemanagerv2.ui.theme.BaseTheme
 import java.util.Date
 
@@ -34,7 +33,7 @@ import java.util.Date
 @Composable
 fun MainPage(
     cardDetails: List<ItemCardDetail>,
-    categories: List<ItemCategoryNavArg>,
+    categories: List<ItemCategoryArg>,
     isLoading: Boolean,
     selectedItem: Int,
     onSelectedItemChange: (Int) -> Unit,
@@ -43,7 +42,7 @@ fun MainPage(
     onManualAdd: () -> Unit,
     onScanAdd: () -> Unit,
     onDeleteCard: (ItemCardDetail) -> Unit,
-    onCategorySelected: (ItemCategoryNavArg) -> Unit
+    onCategorySelected: (ItemCategoryArg) -> Unit
 ) {
     val gridState = rememberLazyGridState()
     var isFabExpanded by remember { mutableStateOf(false) }
@@ -91,9 +90,9 @@ fun MainPage(
 
 @Composable
 fun CategoryListDialog(
-    categories: List<ItemCategoryNavArg>, // 改為接收類別列表作為參數
+    categories: List<ItemCategoryArg>, // 改為接收類別列表作為參數
     onDismissRequest: () -> Unit,
-    onCategorySelected: (ItemCategoryNavArg) -> Unit,
+    onCategorySelected: (ItemCategoryArg) -> Unit,
     onAddCategory: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismissRequest) {
@@ -165,7 +164,7 @@ fun CategoryListDialog(
 
 @Composable
 fun CategoryItem(
-    category: ItemCategoryNavArg, onClick: () -> Unit, onEdit: () -> Unit, onDelete: () -> Unit
+    category: ItemCategoryArg, onClick: () -> Unit, onEdit: () -> Unit, onDelete: () -> Unit
 ) {
     Surface(
         modifier = Modifier
@@ -201,7 +200,7 @@ fun CategoryItem(
 @Preview(showBackground = true)
 @Composable
 fun MainPagePreview() {
-    val itemCategoryDummy = ItemCategoryNavArg(
+    val itemCategoryDummy = ItemCategoryArg(
         id = 1,
         name = "Sample Category",
     )
