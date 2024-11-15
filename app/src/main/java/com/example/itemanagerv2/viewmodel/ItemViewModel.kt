@@ -9,6 +9,8 @@ import com.example.itemanagerv2.data.local.entity.Item
 import com.example.itemanagerv2.data.local.entity.ItemAttributeValue
 import com.example.itemanagerv2.data.local.entity.ItemCategory
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
+import com.example.itemanagerv2.data.local.model.ItemCategoryNavArg
+import com.example.itemanagerv2.data.local.model.toNavArg
 import com.example.itemanagerv2.data.local.repository.ItemRepository
 import com.example.itemanagerv2.data.manager.ImageManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,8 +33,8 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _categories = MutableStateFlow<List<ItemCategory>>(emptyList())
-    val categories: StateFlow<List<ItemCategory>> = _categories.asStateFlow()
+    private val _categories = MutableStateFlow<List<ItemCategoryNavArg>>(emptyList())
+    val categories: StateFlow<List<ItemCategoryNavArg>> = _categories.asStateFlow()
 
     private var hasLoadedCategories = false
 
@@ -79,7 +81,9 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
     private fun loadCategories() {
         viewModelScope.launch {
             itemRepository.getAllCategories().collect { categoriesList ->
-                _categories.value = categoriesList
+                _categories.value = categoriesList.map {
+                    it.toNavArg()
+                }
             }
         }
     }

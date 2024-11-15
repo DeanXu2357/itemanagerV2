@@ -6,6 +6,7 @@ import com.example.itemanagerv2.data.local.AppDatabase
 import com.example.itemanagerv2.data.local.dao.*
 import com.example.itemanagerv2.data.local.entity.*
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
+import com.example.itemanagerv2.data.local.model.toNavArg
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -34,7 +35,9 @@ class ItemRepository @Inject constructor(
             val newItems = itemDao.getPaginatedItems(pageSize, currentPage * pageSize)
             if (newItems.isNotEmpty()) {
                 val itemIds = newItems.map { it.id }
-                val categories = itemCategoryDao.getCategoriesForItems(itemIds)
+                val categories = itemCategoryDao.getCategoriesForItems(itemIds).map {
+                    it.toNavArg()
+                }
                 val allImages = imageDao.getImagesForItems(itemIds)
                 val allAttributes = itemAttributeValueDao.getAttributesForItems(itemIds)
 

@@ -15,7 +15,7 @@ data class ItemCardDetail(
     val coverImageId: Int?,
     val createdAt: Long,
     val updatedAt: Long,
-    val category: ItemCategory?,
+    val category: ItemCategoryNavArg?,
     val codeImage: Image?,
     val coverImage: Image?,
     val images: List<Image>,

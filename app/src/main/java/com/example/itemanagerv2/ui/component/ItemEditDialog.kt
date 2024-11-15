@@ -16,6 +16,7 @@ import com.example.itemanagerv2.data.local.entity.Image
 import com.example.itemanagerv2.data.local.entity.ItemAttributeValue
 import com.example.itemanagerv2.data.local.entity.ItemCategory
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
+import com.example.itemanagerv2.data.local.model.ItemCategoryNavArg
 import com.example.itemanagerv2.ui.theme.BaseTheme
 import java.util.Date
 import kotlinx.coroutines.launch
@@ -23,7 +24,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ItemEditDialog(
     item: ItemCardDetail,
-    categories: List<ItemCategory>,
+    categories: List<ItemCategoryNavArg>,
     onDismiss: () -> Unit,
     onSave: (ItemCardDetail) -> Unit,
     onAddImage: () -> Unit,
@@ -204,20 +205,18 @@ fun FullScreenDialogTopBar(title: String, onDismiss: () -> Unit, onSave: () -> U
 fun ItemEditDialogPreview() {
     val currentDate = Date()
     val sampleCategories = listOf(
-        ItemCategory(id = 1, name = "Electronics", createdAt = currentDate, updatedAt = currentDate),
-        ItemCategory(id = 2, name = "Furniture", createdAt = currentDate, updatedAt = currentDate),
-        ItemCategory(id = 3, name = "Books", createdAt = currentDate, updatedAt = currentDate)
+        ItemCategoryNavArg(id = 1, name = "Electronics"),
+        ItemCategoryNavArg(id = 2, name = "Furniture"),
+        ItemCategoryNavArg(id = 3, name = "Books")
     )
 
     BaseTheme {
         val currentDate = Date()
 
         val sampleCategory =
-            ItemCategory(
+            ItemCategoryNavArg(
                 id = 1,
                 name = "Electronics",
-                createdAt = currentDate,
-                updatedAt = currentDate
             )
 
         val sampleImages =

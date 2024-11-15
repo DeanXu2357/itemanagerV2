@@ -1,11 +1,15 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.example.itemanagerv2.ui.component
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -22,6 +26,7 @@ import com.example.itemanagerv2.data.local.entity.Image
 import com.example.itemanagerv2.data.local.entity.ItemAttributeValue
 import com.example.itemanagerv2.data.local.entity.ItemCategory
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
+import com.example.itemanagerv2.data.local.model.ItemCategoryNavArg
 import com.example.itemanagerv2.ui.theme.BaseTheme
 import java.util.Date
 
@@ -29,7 +34,7 @@ import java.util.Date
 @Composable
 fun MainPage(
     cardDetails: List<ItemCardDetail>,
-    categories: List<ItemCategory>, // 新增類別列表參數
+    categories: List<ItemCategoryNavArg>,
     isLoading: Boolean,
     selectedItem: Int,
     onSelectedItemChange: (Int) -> Unit,
@@ -38,11 +43,10 @@ fun MainPage(
     onManualAdd: () -> Unit,
     onScanAdd: () -> Unit,
     onDeleteCard: (ItemCardDetail) -> Unit,
-    onCategorySelected: (ItemCategory) -> Unit // 新增類別選擇回調
+    onCategorySelected: (ItemCategoryNavArg) -> Unit
 ) {
     val gridState = rememberLazyGridState()
     var isFabExpanded by remember { mutableStateOf(false) }
-    // 新增 dialog 控制狀態
     var showCategoryDialog by remember { mutableStateOf(false) }
 
     Scaffold(topBar = {
@@ -52,7 +56,7 @@ fun MainPage(
             onExpandedChange = { isFabExpanded = it },
             onManualAdd = onManualAdd,
             onScanAdd = onScanAdd,
-            onCategoryManage = { showCategoryDialog = true } // 新增類別管理點擊處理
+            onCategoryManage = { showCategoryDialog = true }
         )
     }) { innerPadding ->
         Box(
@@ -71,9 +75,9 @@ fun MainPage(
                 }
             }
 
-            // 新增 CategoryDialog
             if (showCategoryDialog) {
-                CategoryListDialog(categories = categories, // 傳入類別列表
+                CategoryListDialog(
+                    categories = categories,
                     onDismissRequest = { showCategoryDialog = false },
                     onCategorySelected = { category ->
                         onCategorySelected(category)
@@ -87,9 +91,9 @@ fun MainPage(
 
 @Composable
 fun CategoryListDialog(
-    categories: List<ItemCategory>, // 改為接收類別列表作為參數
+    categories: List<ItemCategoryNavArg>, // 改為接收類別列表作為參數
     onDismissRequest: () -> Unit,
-    onCategorySelected: (ItemCategory) -> Unit,
+    onCategorySelected: (ItemCategoryNavArg) -> Unit,
     onAddCategory: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismissRequest) {
@@ -112,176 +116,193 @@ fun CategoryListDialog(
                 LazyColumn(
                     modifier = Modifier.weight(1f)
                 ) {
-                    items(
-                        itemContent = { category: ItemCategory ->
-                            CategoryItem(
-                                category = category,
-                                onClick = {
-                                    onCategorySelected(category)
-                                    onDismissRequest()
-                                },
-                                onEdit = { /* TODO */ },
-                                onDelete = { /* TODO */ }
-                            )
-                            ) {}
-                        }
+                    itemsIndexed(
+                        items = categories,
+                        key = { _, category -> category }
+                    ) { _, category ->
+                        CategoryItem(
+                            category = category,
+                            onClick = {
+                                onCategorySelected(category)
+                                onDismissRequest()
+                            },
+                            onEdit = { /* TODO: 實作編輯類別功能 */ },
+                            onDelete = { /* TODO: 實作刪除類別功能 */ }
+                        )
+                    }
 
-                                Surface (
-                                modifier = Modifier
-                                    .fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.surface
-                    ) {
-                        Row(
+                    item {
+                        Surface(
                             modifier = Modifier
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
+                                .fillMaxWidth()
+                                .clickable { onAddCategory() },
+                            color = MaterialTheme.colorScheme.surface
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.PlusOne,
-                                contentDescription = "Add Category"
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("新增類別")
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PlusOne,
+                                    contentDescription = "新增類別"
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "新增類別",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
                         }
                     }
                 }
             }
         }
     }
+}
 
-    @Composable
-    fun CategoryItem(
-        category: ItemCategory, onClick: () -> Unit, onEdit: () -> Unit, onDelete: () -> Unit
+
+
+@Composable
+fun CategoryItem(
+    category: ItemCategoryNavArg, onClick: () -> Unit, onEdit: () -> Unit, onDelete: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
     ) {
-        Surface(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp)
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = category.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.weight(1f)
-                )
+            Text(
+                text = category.name,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f)
+            )
 
-                Row {
-                    IconButton(onClick = onEdit) {
-                        Icon(imageVector = Icons.Default.Edit, contentDescription = "編輯")
-                    }
-                    IconButton(onClick = onDelete) {
-                        Icon(imageVector = Icons.Default.Delete, contentDescription = "刪除")
-                    }
+            Row {
+                IconButton(onClick = onEdit) {
+                    Icon(imageVector = Icons.Default.Edit, contentDescription = "編輯")
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(imageVector = Icons.Default.Delete, contentDescription = "刪除")
                 }
             }
         }
     }
+}
 
-    @Preview(showBackground = true)
-    @Composable
-    fun MainPagePreview() {
-        val itemCategoryDummy =
-            ItemCategory(id = 1, name = "Sample Category", createdAt = Date(), updatedAt = Date())
-        val imageDummy = Image(
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true)
+@Composable
+fun MainPagePreview() {
+    val itemCategoryDummy = ItemCategoryNavArg(
+        id = 1,
+        name = "Sample Category",
+    )
+    val imageDummy = Image(
+        id = 1,
+        filePath = "https://example.com/image1.jpg",
+        itemId = 1,
+        order = 0,
+        content = "Sample image 1",
+        createdAt = Date(),
+        updatedAt = Date()
+    )
+    val attributeDummy = ItemAttributeValue(
+        id = 1,
+        value = "Sample Value",
+        itemId = 1,
+        createdAt = Date(),
+        updatedAt = Date(),
+        attributeId = 1
+    )
+    val previewCardDetails = listOf(
+        ItemCardDetail(
             id = 1,
-            filePath = "https://example.com/image1.jpg",
-            itemId = 1,
-            order = 0,
-            content = "Sample image 1",
-            createdAt = Date(),
-            updatedAt = Date()
+            name = "Sample Item 1",
+            coverImage = null,
+            categoryId = 1,
+            codeType = "QR",
+            codeContent = "Sample content 1",
+            codeImageId = 0,
+            coverImageId = 0,
+            createdAt = 0,
+            updatedAt = 0,
+            category = itemCategoryDummy,
+            codeImage = imageDummy,
+            images = listOf(imageDummy),
+            attributes = listOf(attributeDummy),
+        ),
+        ItemCardDetail(
+            id = 2,
+            name = "Sample Item 2",
+            coverImage = null,
+            categoryId = 2,
+            codeType = "Barcode",
+            codeContent = "Sample content 2",
+            codeImageId = 0,
+            coverImageId = 0,
+            createdAt = 0,
+            updatedAt = 0,
+            category = itemCategoryDummy,
+            codeImage = imageDummy,
+            images = listOf(imageDummy),
+            attributes = listOf(attributeDummy),
+        ),
+        ItemCardDetail(
+            id = 3,
+            name = "Sample Item 3",
+            coverImage = null,
+            categoryId = 1,
+            codeType = "QR",
+            codeContent = "Sample content 3",
+            codeImageId = 0,
+            coverImageId = 0,
+            createdAt = 0,
+            updatedAt = 0,
+            category = itemCategoryDummy,
+            codeImage = imageDummy,
+            images = listOf(imageDummy),
+            attributes = listOf(attributeDummy),
+        ),
+        ItemCardDetail(
+            id = 4,
+            name = "Sample Item 4",
+            coverImage = null,
+            categoryId = 2,
+            codeType = "Barcode",
+            codeContent = "Sample content 4",
+            codeImageId = 0,
+            coverImageId = 0,
+            createdAt = 0,
+            updatedAt = 0,
+            category = itemCategoryDummy,
+            codeImage = imageDummy,
+            images = listOf(imageDummy),
+            attributes = listOf(attributeDummy),
         )
-        val attributeDummy = ItemAttributeValue(
-            id = 1,
-            value = "Sample Value",
-            itemId = 1,
-            createdAt = Date(),
-            updatedAt = Date(),
-            attributeId = 1
-        )
-        val previewCardDetails = listOf(
-            ItemCardDetail(
-                id = 1,
-                name = "Sample Item 1",
-                coverImage = null,
-                categoryId = 1,
-                codeType = "QR",
-                codeContent = "Sample content 1",
-                codeImageId = 0,
-                coverImageId = 0,
-                createdAt = 0,
-                updatedAt = 0,
-                category = itemCategoryDummy,
-                codeImage = imageDummy,
-                images = listOf(imageDummy),
-                attributes = listOf(attributeDummy),
-            ), ItemCardDetail(
-                id = 2,
-                name = "Sample Item 2",
-                coverImage = null,
-                categoryId = 2,
-                codeType = "Barcode",
-                codeContent = "Sample content 2",
-                codeImageId = 0,
-                coverImageId = 0,
-                createdAt = 0,
-                updatedAt = 0,
-                category = itemCategoryDummy,
-                codeImage = imageDummy,
-                images = listOf(imageDummy),
-                attributes = listOf(attributeDummy),
-            ), ItemCardDetail(
-                id = 3,
-                name = "Sample Item 3",
-                coverImage = null,
-                categoryId = 1,
-                codeType = "QR",
-                codeContent = "Sample content 3",
-                codeImageId = 0,
-                coverImageId = 0,
-                createdAt = 0,
-                updatedAt = 0,
-                category = itemCategoryDummy,
-                codeImage = imageDummy,
-                images = listOf(imageDummy),
-                attributes = listOf(attributeDummy),
-            ), ItemCardDetail(
-                id = 4,
-                name = "Sample Item 4",
-                coverImage = null,
-                categoryId = 2,
-                codeType = "Barcode",
-                codeContent = "Sample content 4",
-                codeImageId = 0,
-                coverImageId = 0,
-                createdAt = 0,
-                updatedAt = 0,
-                category = itemCategoryDummy,
-                codeImage = imageDummy,
-                images = listOf(imageDummy),
-                attributes = listOf(attributeDummy),
-            )
-        )
+    )
 
-        BaseTheme {
-            MainPage(cardDetails = previewCardDetails,
-                categories = listOf(itemCategoryDummy), // 傳入類別列表
-                isLoading = false,
-                selectedItem = 0,
-                onSelectedItemChange = {},
-                onLoadMore = {},
-                onEditCard = {},
-                onManualAdd = {},
-                onScanAdd = {},
-                onDeleteCard = {},
-                onCategorySelected = {} // 新增類別選擇回調
-            )
-        }
+
+    BaseTheme {
+        MainPage(
+            cardDetails = previewCardDetails,
+            categories = listOf(itemCategoryDummy),
+            isLoading = false,
+            selectedItem = 0,
+            onSelectedItemChange = { },
+            onLoadMore = { },
+            onEditCard = { },
+            onManualAdd = { },
+            onScanAdd = { },
+            onDeleteCard = { },
+            onCategorySelected = {}
+        )
     }
+}
