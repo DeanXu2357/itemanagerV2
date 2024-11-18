@@ -73,8 +73,8 @@ fun MainContent(itemViewModel: ItemViewModel) {
             itemViewModel.deleteItem(cardDetail)
             itemViewModel.refreshItems()
         },
-        onCategorySelected = { category ->
-            // 處理類別選擇邏輯
+        onAddCategory = { categoryName ->
+            itemViewModel.addNewCategory(categoryName)
         }
     )
 

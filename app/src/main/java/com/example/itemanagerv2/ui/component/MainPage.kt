@@ -11,14 +11,17 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlusOne
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -42,7 +45,7 @@ fun MainPage(
     onManualAdd: () -> Unit,
     onScanAdd: () -> Unit,
     onDeleteCard: (ItemCardDetail) -> Unit,
-    onCategorySelected: (ItemCategoryArg) -> Unit
+    onAddCategory: (String) -> Unit
 ) {
     val gridState = rememberLazyGridState()
     var isFabExpanded by remember { mutableStateOf(false) }
@@ -79,10 +82,10 @@ fun MainPage(
                     categories = categories,
                     onDismissRequest = { showCategoryDialog = false },
                     onCategorySelected = { category ->
-                        onCategorySelected(category)
                         showCategoryDialog = false
                     },
-                    onAddCategory = { /* TODO: 實現新增類別功能 */ })
+                    onAddCategory = onAddCategory
+                )
             }
         }
     }
@@ -93,27 +96,27 @@ fun CategoryListDialog(
     categories: List<ItemCategoryArg>, // 改為接收類別列表作為參數
     onDismissRequest: () -> Unit,
     onCategorySelected: (ItemCategoryArg) -> Unit,
-    onAddCategory: () -> Unit
+    onAddCategory: (String) -> Unit
 ) {
+    val modifier = Modifier.fillMaxWidth()
     Dialog(onDismissRequest = onDismissRequest) {
         Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight(),
+            modifier = modifier,
             shape = MaterialTheme.shapes.medium,
             color = MaterialTheme.colorScheme.surface
         ) {
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = modifier.padding(16.dp)
             ) {
                 Text(
                     text = "Item Categories",
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = modifier.padding(bottom = 16.dp),
+                    textAlign = TextAlign.Center
                 )
 
                 LazyColumn(
-                    modifier = Modifier.weight(1f)
+                    modifier = modifier.weight(1f)
                 ) {
                     itemsIndexed(
                         items = categories,
@@ -132,26 +135,14 @@ fun CategoryListDialog(
 
                     item {
                         Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onAddCategory() },
+                            modifier = modifier,
                             color = MaterialTheme.colorScheme.surface
                         ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.PlusOne,
-                                    contentDescription = "Add a new category"
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Add a new category",
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                            }
+                            AddCategoryItem(
+                                modifier = modifier,
+                                onAddCategory = onAddCategory,
+                                onCancel = { },
+                            )
                         }
                     }
                 }
@@ -160,7 +151,81 @@ fun CategoryListDialog(
     }
 }
 
+@Composable
+fun AddCategoryItem(
+    modifier: Modifier,
+    onAddCategory: (String) -> Unit,
+    onCancel: () -> Unit
+) {
+    var isEditing by remember { mutableStateOf(false) }
+    var categoryName by remember { mutableStateOf("") }
 
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        if (!isEditing) {
+            val editingModifier = Modifier
+            Row(
+                modifier = editingModifier
+                    .clickable { isEditing = true }
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    modifier = editingModifier,
+                    imageVector = Icons.Default.PlusOne,
+                    contentDescription = "Add item category"
+                )
+                Spacer(modifier = editingModifier.width(8.dp))
+                Text(
+                    modifier = editingModifier,
+                    text = "Add Category",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+        } else {
+            val inputModifier = Modifier
+            Row(
+                modifier = inputModifier,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = categoryName,
+                    onValueChange = { categoryName = it },
+                    modifier = inputModifier.weight(1f),
+                    placeholder = { Text("Text here") },
+                    singleLine = true
+                )
+
+                Row {
+                    IconButton(
+                        onClick = {
+                            if (categoryName.isNotBlank()) {
+                                onAddCategory(categoryName)
+                                categoryName = ""
+                            }
+                            isEditing = false
+                        }
+                    ) {
+                        Icon(imageVector = Icons.Default.Save, contentDescription = "Save")
+                    }
+                    IconButton(
+                        onClick = {
+                            isEditing = false
+                            categoryName = ""
+                            onCancel()
+                        }
+                    ) {
+                        Icon(imageVector = Icons.Default.Cancel, contentDescription = "Cancel")
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun CategoryItem(
@@ -186,10 +251,10 @@ fun CategoryItem(
 
             Row {
                 IconButton(onClick = onEdit) {
-                    Icon(imageVector = Icons.Default.Edit, contentDescription = "編輯")
+                    Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit")
                 }
                 IconButton(onClick = onDelete) {
-                    Icon(imageVector = Icons.Default.Delete, contentDescription = "刪除")
+                    Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete")
                 }
             }
         }
@@ -301,7 +366,7 @@ fun MainPagePreview() {
             onManualAdd = { },
             onScanAdd = { },
             onDeleteCard = { },
-            onCategorySelected = {}
+            onAddCategory = { }
         )
     }
 }
