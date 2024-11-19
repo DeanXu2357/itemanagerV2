@@ -152,4 +152,8 @@ class ItemRepository @Inject constructor(
         )
         return itemCategoryDao.insertCategory(category)
     }
+
+    suspend fun deleteCategory(categoryId: Int) {
+        itemCategoryDao.deleteById(categoryId)
+    }
 }

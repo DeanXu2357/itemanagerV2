@@ -274,4 +274,16 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
             }
         }
     }
+
+    fun deleteCategory(categoryId: Int) {
+        viewModelScope.launch {
+            try {
+                itemRepository.deleteCategory(categoryId)
+                loadCategories()
+            } catch (e: Exception) {
+                _error.value = "Error deleting category: ${e.message}"
+                Log.e("ItemViewModel", "Error deleting category", e)
+            }
+        }
+    }
 }

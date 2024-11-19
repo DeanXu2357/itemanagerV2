@@ -15,7 +15,7 @@ fun CategoryListPage(
     categories: List<ItemCategoryArg>,
     onAddCategory: (String) -> Unit,
     onEditCategory: (ItemCategoryArg) -> Unit,
-    onDeleteCategory: (ItemCategoryArg) -> Unit
+    onDeleteCategory: (Int) -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -35,7 +35,7 @@ fun CategoryListPage(
                     category = category,
                     onClick = { /* TODO: 實現點擊詳情功能 */ },
                     onEdit = { onEditCategory(category) },
-                    onDelete = { onDeleteCategory(category) }
+                    onDelete = { onDeleteCategory(category.id) }
                 )
             }
             item {

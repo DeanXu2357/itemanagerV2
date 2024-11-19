@@ -59,8 +59,10 @@ fun MainContent(itemViewModel: ItemViewModel) {
         onDeleteCard = { cardDetail ->
             itemViewModel.deleteItem(cardDetail)
             itemViewModel.refreshItems()
-        }
-    ) { categoryName -> itemViewModel.addNewCategory(categoryName) }
+        },
+        onAddCategory = { categoryName -> itemViewModel.addNewCategory(categoryName) },
+        onDeleteCategory = { categoryId -> itemViewModel.deleteCategory(categoryId) }
+    )
 
     if (showEditDialog && itemCardDetailToEdit != null) {
         itemViewModel.ensureCategoriesLoaded()
@@ -122,7 +124,8 @@ fun AppScaffold(
     onManualAdd: () -> Unit,
     onScanAdd: () -> Unit,
     onDeleteCard: (ItemCardDetail) -> Unit,
-    onAddCategory: (String) -> Unit
+    onAddCategory: (String) -> Unit,
+    onDeleteCategory: (Int) -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(0) }
 
@@ -164,7 +167,7 @@ fun AppScaffold(
                         categories = categories,
                         onAddCategory = onAddCategory,
                         onEditCategory = { /* TODO: 實現編輯類別功能 */ },
-                        onDeleteCategory = { /* TODO: 實現刪除類別功能 */ }
+                        onDeleteCategory =  onDeleteCategory
                     )
             }
         }
