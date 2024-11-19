@@ -18,8 +18,7 @@ fun InsertFAB(
     isExpanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     onManualAdd: () -> Unit,
-    onScanAdd: () -> Unit,
-    onCategoryManage: () -> Unit // 新增參數
+    onScanAdd: () -> Unit
 ) {
     val rotation by animateFloatAsState(targetValue = if (isExpanded) 45f else 0f, label = "")
 
@@ -39,13 +38,6 @@ fun InsertFAB(
                 },
                 modifier = Modifier.Companion.padding(bottom = 16.dp)
             ) { Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan Add") }
-            SmallFloatingActionButton(
-                onClick = {
-                    onCategoryManage()
-                    onExpandedChange(false)
-                },
-                modifier = Modifier.Companion.padding(bottom = 16.dp)
-            ) { Icon(Icons.Filled.Category, contentDescription = "Manage Categories") }
         }
         FloatingActionButton(onClick = { onExpandedChange(!isExpanded) }) {
             Icon(
@@ -72,10 +64,8 @@ fun InsertFABPreview() {
                     InsertFAB(
                         isExpanded = false,
                         onExpandedChange = {},
-                        onManualAdd = {},
-                        onScanAdd = {},
-                        onCategoryManage = {}
-                    )
+                        onManualAdd = {}
+                    ) {}
 
                     androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(16.dp))
 
@@ -83,10 +73,8 @@ fun InsertFABPreview() {
                     InsertFAB(
                         isExpanded = true,
                         onExpandedChange = {},
-                        onManualAdd = {},
-                        onScanAdd = {},
-                        onCategoryManage = {}
-                    )
+                        onManualAdd = {}
+                    ) {}
                 }
             }
         }
