@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.itemanagerv2.data.local.entity.CategoryAttribute
 import com.example.itemanagerv2.data.local.entity.Image
 import com.example.itemanagerv2.data.local.entity.Item
 import com.example.itemanagerv2.data.local.entity.ItemAttributeValue
@@ -13,9 +14,9 @@ import com.example.itemanagerv2.data.local.model.toNavArg
 import com.example.itemanagerv2.data.local.repository.ItemRepository
 import com.example.itemanagerv2.data.manager.ImageManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import java.util.Date
 import javax.inject.Inject
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -42,6 +43,9 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    private val _categoryAttributes = MutableStateFlow<List<CategoryAttribute>>(emptyList())
+    val categoryAttributes: StateFlow<List<CategoryAttribute>> = _categoryAttributes.asStateFlow()
 
     init {
         loadMoreItems()
@@ -80,9 +84,7 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
     private fun loadCategories() {
         viewModelScope.launch {
             itemRepository.getAllCategories().collect { categoriesList ->
-                _categories.value = categoriesList.map {
-                    it.toNavArg()
-                }
+                _categories.value = categoriesList.map { it.toNavArg() }
             }
         }
     }
@@ -90,17 +92,18 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
     fun addNewItem(newItem: ItemCardDetail) {
         viewModelScope.launch {
             try {
-                val item = Item(
-                    id = 0,
-                    name = newItem.name,
-                    categoryId = newItem.categoryId,
-                    codeType = newItem.codeType,
-                    codeContent = newItem.codeContent,
-                    codeImageId = newItem.codeImageId,
-                    coverImageId = newItem.coverImageId,
-                    createdAt = System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis()
-                )
+                val item =
+                    Item(
+                        id = 0,
+                        name = newItem.name,
+                        categoryId = newItem.categoryId,
+                        codeType = newItem.codeType,
+                        codeContent = newItem.codeContent,
+                        codeImageId = newItem.codeImageId,
+                        coverImageId = newItem.coverImageId,
+                        createdAt = System.currentTimeMillis(),
+                        updatedAt = System.currentTimeMillis()
+                    )
 
                 val newItemId = itemRepository.insertItem(item)
 
@@ -181,10 +184,15 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
         viewModelScope.launch {
             try {
                 val filePath = imageManager.saveImage(bitmap)
-                val image = Image(
-                    filePath = filePath, itemId = itemId, order = 0, // TODO: Set the correct order
-                    content = null, createdAt = Date(), updatedAt = Date()
-                )
+                val image =
+                    Image(
+                        filePath = filePath,
+                        itemId = itemId,
+                        order = 0, // TODO: Set the correct order
+                        content = null,
+                        createdAt = Date(),
+                        updatedAt = Date()
+                    )
                 itemRepository.insertImage(image)
             } catch (e: Exception) {
                 _error.value = "Error adding image: ${e.message}"
@@ -211,17 +219,18 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
     fun updateItemCardDetail(updatedItem: ItemCardDetail) {
         viewModelScope.launch {
             try {
-                val item = Item(
-                    id = updatedItem.id,
-                    name = updatedItem.name,
-                    categoryId = updatedItem.categoryId,
-                    codeType = updatedItem.codeType,
-                    codeContent = updatedItem.codeContent,
-                    codeImageId = updatedItem.codeImageId,
-                    coverImageId = updatedItem.coverImageId,
-                    createdAt = updatedItem.createdAt,
-                    updatedAt = System.currentTimeMillis()
-                )
+                val item =
+                    Item(
+                        id = updatedItem.id,
+                        name = updatedItem.name,
+                        categoryId = updatedItem.categoryId,
+                        codeType = updatedItem.codeType,
+                        codeContent = updatedItem.codeContent,
+                        codeImageId = updatedItem.codeImageId,
+                        coverImageId = updatedItem.coverImageId,
+                        createdAt = updatedItem.createdAt,
+                        updatedAt = System.currentTimeMillis()
+                    )
 
                 itemRepository.updateItem(item)
 
@@ -285,5 +294,18 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
                 Log.e("ItemViewModel", "Error deleting category", e)
             }
         }
+    }
+
+    fun loadCategoryAttributes(categoryId: Int) {
+       viewModelScope.launch {
+           try {
+               itemRepository.getCategoryAttributes(categoryId).collect { attributesList ->
+                   _categoryAttributes.value = attributesList
+               }
+           } catch (e: Exception) {
+               _error.value = "Error loading category attributes: ${e.message}"
+               Log.e("ItemViewModel", "Error loading category attributes", e)
+           }
+       }
     }
 }

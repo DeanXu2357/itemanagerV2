@@ -15,6 +15,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.itemanagerv2.data.local.entity.CategoryAttribute
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
 import com.example.itemanagerv2.data.local.model.ItemCategoryArg
 import com.example.itemanagerv2.ui.component.CategoryListPage
@@ -42,6 +43,7 @@ fun MainContent(itemViewModel: ItemViewModel) {
     val cardDetails by itemViewModel.itemCardDetails.collectAsStateWithLifecycle()
     val isLoading by itemViewModel.isLoading.collectAsStateWithLifecycle(initialValue = false)
     val categories by itemViewModel.categories.collectAsStateWithLifecycle()
+    val categoryAttributes by itemViewModel.categoryAttributes.collectAsStateWithLifecycle()
 
     var showEditDialog by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
@@ -50,18 +52,19 @@ fun MainContent(itemViewModel: ItemViewModel) {
     AppScaffold(
         cardDetails = cardDetails,
         categories = categories,
-        onEditCard = { cardDetail ->
-            itemCardDetailToEdit = cardDetail
+        categoryAttributes =  categoryAttributes,
+        onEditCard = { item ->
+            itemCardDetailToEdit = item
             showEditDialog = true
         },
         onManualAdd = { showAddDialog = true },
-        onScanAdd = {},
-        onDeleteCard = { cardDetail ->
-            itemViewModel.deleteItem(cardDetail)
-            itemViewModel.refreshItems()
-        },
+        onScanAdd = { /* TODO:  */ },
+        onDeleteCard = { itemCardDetail -> itemViewModel.deleteItem(itemCardDetail) },
         onAddCategory = { categoryName -> itemViewModel.addNewCategory(categoryName) },
-        onDeleteCategory = { categoryId -> itemViewModel.deleteCategory(categoryId) }
+        onDeleteCategory = { categoryId -> itemViewModel.deleteCategory(categoryId) },
+        onLoadCategoryAttributes = { categoryId ->
+            itemViewModel.loadCategoryAttributes(categoryId)
+        }
     )
 
     if (showEditDialog && itemCardDetailToEdit != null) {
@@ -120,12 +123,14 @@ fun MainContent(itemViewModel: ItemViewModel) {
 fun AppScaffold(
     cardDetails: List<ItemCardDetail>,
     categories: List<ItemCategoryArg>,
+    categoryAttributes: List<CategoryAttribute>,
     onEditCard: (ItemCardDetail) -> Unit,
     onManualAdd: () -> Unit,
     onScanAdd: () -> Unit,
     onDeleteCard: (ItemCardDetail) -> Unit,
     onAddCategory: (String) -> Unit,
-    onDeleteCategory: (Int) -> Unit
+    onDeleteCategory: (Int) -> Unit,
+    onLoadCategoryAttributes: (Int) -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(0) }
 
@@ -147,11 +152,9 @@ fun AppScaffold(
             }
         }
     ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)) {
             when (selectedTab) {
                 0 ->
                     MainPage(
@@ -165,9 +168,11 @@ fun AppScaffold(
                 1 ->
                     CategoryListPage(
                         categories = categories,
+                        categoryAttributes = categoryAttributes,
                         onAddCategory = onAddCategory,
                         onEditCategory = { /* TODO: 實現編輯類別功能 */ },
-                        onDeleteCategory =  onDeleteCategory
+                        onDeleteCategory = onDeleteCategory,
+                        onLoadCategoryAttributes = onLoadCategoryAttributes
                     )
             }
         }

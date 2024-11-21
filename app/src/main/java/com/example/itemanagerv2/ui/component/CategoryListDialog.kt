@@ -175,6 +175,7 @@ fun CategoryItem(
         modifier = Modifier.Companion
             .fillMaxWidth()
             .padding(vertical = 8.dp)
+            .clickable(onClick = onClick),
     ) {
         Row(
             modifier = Modifier.Companion
@@ -190,9 +191,9 @@ fun CategoryItem(
             )
 
             Row {
-                IconButton(onClick = onEdit) {
-                    Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit")
-                }
+//                IconButton(onClick = onEdit) {
+//                    Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit")
+//                }
                 IconButton(onClick = onDelete) {
                     Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete")
                 }
