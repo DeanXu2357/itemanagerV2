@@ -52,7 +52,7 @@ fun MainContent(itemViewModel: ItemViewModel) {
     AppScaffold(
         cardDetails = cardDetails,
         categories = categories,
-        categoryAttributes =  categoryAttributes,
+        categoryAttributes = categoryAttributes,
         onEditCard = { item ->
             itemCardDetailToEdit = item
             showEditDialog = true
@@ -64,6 +64,9 @@ fun MainContent(itemViewModel: ItemViewModel) {
         onDeleteCategory = { categoryId -> itemViewModel.deleteCategory(categoryId) },
         onLoadCategoryAttributes = { categoryId ->
             itemViewModel.loadCategoryAttributes(categoryId)
+        },
+        onDeleteAttribute = { attributeId ->
+            itemViewModel.deleteCategoryAttribute(attributeId)
         }
     )
 
@@ -130,7 +133,8 @@ fun AppScaffold(
     onDeleteCard: (ItemCardDetail) -> Unit,
     onAddCategory: (String) -> Unit,
     onDeleteCategory: (Int) -> Unit,
-    onLoadCategoryAttributes: (Int) -> Unit
+    onLoadCategoryAttributes: (Int) -> Unit,
+    onDeleteAttribute: (Int) -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(0) }
 
@@ -152,9 +156,11 @@ fun AppScaffold(
             }
         }
     ) { innerPadding ->
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
             when (selectedTab) {
                 0 ->
                     MainPage(
@@ -172,7 +178,8 @@ fun AppScaffold(
                         onAddCategory = onAddCategory,
                         onEditCategory = { /* TODO: 實現編輯類別功能 */ },
                         onDeleteCategory = onDeleteCategory,
-                        onLoadCategoryAttributes = onLoadCategoryAttributes
+                        onLoadCategoryAttributes = onLoadCategoryAttributes,
+                        onDeleteAttribute = onDeleteAttribute
                     )
             }
         }

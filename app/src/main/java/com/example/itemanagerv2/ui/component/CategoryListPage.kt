@@ -35,7 +35,8 @@ fun CategoryListPage(
     onAddCategory: (String) -> Unit,
     onEditCategory: (ItemCategoryArg) -> Unit,
     onDeleteCategory: (Int) -> Unit,
-    onLoadCategoryAttributes: (Int) -> Unit, // 新增callback
+    onLoadCategoryAttributes: (Int) -> Unit,
+    onDeleteAttribute: (Int) -> Unit, // 新增callback
 ) {
     var selectedCategory by remember { mutableStateOf<ItemCategoryArg?>(null) }
     var expandedAttributeId by remember { mutableStateOf<Int?>(null) }
@@ -46,7 +47,7 @@ fun CategoryListPage(
             category = selectedCategory!!,
             attributes = categoryAttributes,
             onDismiss = { selectedCategory = null },
-            onDeleteAttribute = {},
+            onDeleteAttribute = onDeleteAttribute,
             expandedAttributeId = expandedAttributeId,
             onToggleExpand = { id ->
                 expandedAttributeId = if (expandedAttributeId == id) null else id
@@ -167,8 +168,10 @@ private fun AttributeListItem(
                     text = attribute.name,
                     style = MaterialTheme.typography.titleMedium
                 )
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete")
+                if (attribute.isEditable) {
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete")
+                    }
                 }
             }
 

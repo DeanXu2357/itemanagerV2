@@ -160,4 +160,8 @@ class ItemRepository @Inject constructor(
     fun getCategoryAttributes(categoryId: Int): Flow<List<CategoryAttribute>> {
         return categoryAttributeDao.getAttributesForCategory(categoryId)
     }
+
+    suspend fun deleteCategoryAttribute(attributeId: Int) {
+        categoryAttributeDao.deleteById(attributeId)
+    }
 }

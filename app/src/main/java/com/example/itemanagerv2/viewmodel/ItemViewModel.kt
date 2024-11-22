@@ -297,15 +297,29 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
     }
 
     fun loadCategoryAttributes(categoryId: Int) {
-       viewModelScope.launch {
-           try {
-               itemRepository.getCategoryAttributes(categoryId).collect { attributesList ->
-                   _categoryAttributes.value = attributesList
-               }
-           } catch (e: Exception) {
-               _error.value = "Error loading category attributes: ${e.message}"
-               Log.e("ItemViewModel", "Error loading category attributes", e)
-           }
-       }
+        viewModelScope.launch {
+            try {
+                itemRepository.getCategoryAttributes(categoryId).collect { attributesList ->
+                    _categoryAttributes.value = attributesList
+                }
+            } catch (e: Exception) {
+                _error.value = "Error loading category attributes: ${e.message}"
+                Log.e("ItemViewModel", "Error loading category attributes", e)
+            }
+        }
+    }
+
+    fun deleteCategoryAttribute(attributeId: Int) {
+        viewModelScope.launch {
+            try {
+                itemRepository.deleteCategoryAttribute(attributeId)
+                // 刷新當前屬性列表
+                _categoryAttributes.value =
+                    _categoryAttributes.value.filter { it.id != attributeId }
+            } catch (e: Exception) {
+                _error.value = "Error deleting category attribute: ${e.message}"
+                Log.e("ItemViewModel", "Error deleting category attribute", e)
+            }
+        }
     }
 }
