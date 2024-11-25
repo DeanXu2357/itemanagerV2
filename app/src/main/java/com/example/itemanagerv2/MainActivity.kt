@@ -44,10 +44,13 @@ fun MainContent(itemViewModel: ItemViewModel) {
     val isLoading by itemViewModel.isLoading.collectAsStateWithLifecycle(initialValue = false)
     val categories by itemViewModel.categories.collectAsStateWithLifecycle()
     val categoryAttributes by itemViewModel.categoryAttributes.collectAsStateWithLifecycle()
-
     var showEditDialog by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
     var itemCardDetailToEdit by remember { mutableStateOf<ItemCardDetail?>(null) }
+
+    val onAddAttribute = { attribute: CategoryAttribute ->
+        itemViewModel.addCategoryAttribute(attribute)
+    }
 
     AppScaffold(
         cardDetails = cardDetails,
@@ -58,7 +61,7 @@ fun MainContent(itemViewModel: ItemViewModel) {
             showEditDialog = true
         },
         onManualAdd = { showAddDialog = true },
-        onScanAdd = { /* TODO:  */ },
+        onScanAdd = { /* TODO: */ },
         onDeleteCard = { itemCardDetail -> itemViewModel.deleteItem(itemCardDetail) },
         onAddCategory = { categoryName -> itemViewModel.addNewCategory(categoryName) },
         onDeleteCategory = { categoryId -> itemViewModel.deleteCategory(categoryId) },
@@ -67,7 +70,8 @@ fun MainContent(itemViewModel: ItemViewModel) {
         },
         onDeleteAttribute = { attributeId ->
             itemViewModel.deleteCategoryAttribute(attributeId)
-        }
+        },
+        onAddAttribute = onAddAttribute
     )
 
     if (showEditDialog && itemCardDetailToEdit != null) {
@@ -134,7 +138,8 @@ fun AppScaffold(
     onAddCategory: (String) -> Unit,
     onDeleteCategory: (Int) -> Unit,
     onLoadCategoryAttributes: (Int) -> Unit,
-    onDeleteAttribute: (Int) -> Unit
+    onDeleteAttribute: (Int) -> Unit,
+    onAddAttribute: (CategoryAttribute) -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(0) }
 
@@ -179,7 +184,8 @@ fun AppScaffold(
                         onEditCategory = { /* TODO: 實現編輯類別功能 */ },
                         onDeleteCategory = onDeleteCategory,
                         onLoadCategoryAttributes = onLoadCategoryAttributes,
-                        onDeleteAttribute = onDeleteAttribute
+                        onDeleteAttribute = onDeleteAttribute,
+                        onAddAttribute = onAddAttribute
                     )
             }
         }

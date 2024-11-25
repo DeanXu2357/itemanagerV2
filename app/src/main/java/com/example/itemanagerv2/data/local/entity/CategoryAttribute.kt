@@ -28,4 +28,16 @@ data class CategoryAttribute(
     val defaultValue: String?,
     val createdAt: Date,
     val updatedAt: Date
-)
+) {
+    companion object {
+        const val TYPE_STRING = "string"
+        const val TYPE_NUMBER = "number" 
+        const val TYPE_DATE_STRING = "date_string"
+
+        val AVAILABLE_TYPES = listOf(
+            TYPE_STRING,
+            TYPE_NUMBER,
+            TYPE_DATE_STRING
+        )
+    }
+}

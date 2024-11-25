@@ -164,4 +164,8 @@ class ItemRepository @Inject constructor(
     suspend fun deleteCategoryAttribute(attributeId: Int) {
         categoryAttributeDao.deleteById(attributeId)
     }
+
+    suspend fun insertCategoryAttribute(attribute: CategoryAttribute): Long {
+        return categoryAttributeDao.insertAttribute(attribute)
+    }
 }

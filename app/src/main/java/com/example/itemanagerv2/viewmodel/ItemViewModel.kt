@@ -322,4 +322,16 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
             }
         }
     }
+
+    fun addCategoryAttribute(attribute: CategoryAttribute) {
+        viewModelScope.launch {
+            try {
+                itemRepository.insertCategoryAttribute(attribute)
+                loadCategoryAttributes(attribute.categoryId)
+            } catch (e: Exception) {
+                _error.value = "Error adding category attribute: ${e.message}"
+                Log.e("ItemViewModel", "Error adding category attribute", e)
+            }
+        }
+    }
 }
