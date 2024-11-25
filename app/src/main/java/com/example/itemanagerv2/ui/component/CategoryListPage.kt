@@ -3,6 +3,7 @@ package com.example.itemanagerv2.ui.component
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,17 +11,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -202,7 +207,6 @@ private fun AttributeListItem(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddAttributeItem(
     categoryId: Int,
@@ -242,12 +246,8 @@ private fun AddAttributeItem(
                     label = { Text("Name") },
                     modifier = Modifier.fillMaxWidth()
                 )
-                
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+
+                Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = when(valueType) {
                             CategoryAttribute.TYPE_STRING -> "Text"
@@ -258,33 +258,53 @@ private fun AddAttributeItem(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Value Type") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        trailingIcon = {
+                            Icon(
+                                if (expanded) Icons.Default.KeyboardArrowUp 
+                                else Icons.Default.KeyboardArrowDown,
+                                "Choose value type",
+                            )
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor()
+                            .clickable(
+                                onClick = { expanded = true }
+                            )
                     )
 
-                    ExposedDropdownMenu(
+                    // 點擊空白處也可以觸發展開
+                    if (!expanded) {
+                        Spacer(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable(
+                                    onClick = { expanded = true }
+                                )
+                        )
+                    }
+
+                    DropdownMenu(
                         expanded = expanded,
-                        onDismissRequest = { expanded = false }
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         DropdownMenuItem(
                             text = { Text("Text") },
-                            onClick = { 
+                            onClick = {
                                 valueType = CategoryAttribute.TYPE_STRING
-                                expanded = false 
+                                expanded = false
                             }
                         )
                         DropdownMenuItem(
                             text = { Text("Number") },
-                            onClick = { 
+                            onClick = {
                                 valueType = CategoryAttribute.TYPE_NUMBER
                                 expanded = false
                             }
                         )
                         DropdownMenuItem(
                             text = { Text("Date") },
-                            onClick = { 
+                            onClick = {
                                 valueType = CategoryAttribute.TYPE_DATE_STRING
                                 expanded = false
                             }
