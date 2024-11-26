@@ -59,6 +59,8 @@ fun MainContent(itemViewModel: ItemViewModel) {
         onEditCard = { item ->
             itemCardDetailToEdit = item
             showEditDialog = true
+            // Load attributes for the item's category
+            itemViewModel.loadCategoryAttributes(item.categoryId)
         },
         onManualAdd = { showAddDialog = true },
         onScanAdd = { /* TODO: */ },
@@ -78,7 +80,8 @@ fun MainContent(itemViewModel: ItemViewModel) {
         itemViewModel.ensureCategoriesLoaded()
         ItemEditDialog(
             item = itemCardDetailToEdit!!,
-            categories,
+            categories = categories,
+            categoryAttributes = categoryAttributes,
             onDismiss = {
                 showEditDialog = false
                 itemCardDetailToEdit = null
@@ -89,8 +92,12 @@ fun MainContent(itemViewModel: ItemViewModel) {
                 showEditDialog = false
                 itemCardDetailToEdit = null
             },
-            onAddImage = { /*TODO: handle add image*/ }
-        ) {}
+            onAddImage = { /*TODO: handle add image*/ },
+            onDeleteImage = { /*TODO: handle delete image*/ },
+            onCategorySelected = { categoryId ->
+                itemViewModel.loadCategoryAttributes(categoryId)
+            }
+        )
     }
 
     if (showAddDialog) {
@@ -114,15 +121,20 @@ fun MainContent(itemViewModel: ItemViewModel) {
             )
         ItemEditDialog(
             item = emptyItem,
-            categories,
+            categories = categories,
+            categoryAttributes = categoryAttributes,
             onDismiss = { showAddDialog = false },
             onSave = { newItem ->
                 itemViewModel.addNewItem(newItem)
                 itemViewModel.refreshItems()
                 showAddDialog = false
             },
-            onAddImage = { /*TODO:  handle add image*/ }
-        ) {}
+            onAddImage = { /*TODO:  handle add image*/ },
+            onDeleteImage = { /*TODO: handle delete image*/ },
+            onCategorySelected = { categoryId ->
+                itemViewModel.loadCategoryAttributes(categoryId)
+            }
+        )
     }
 }
 
