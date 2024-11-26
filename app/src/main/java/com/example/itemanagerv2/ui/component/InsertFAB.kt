@@ -28,18 +28,16 @@ fun InsertFAB(
                 onClick = {
                     onManualAdd()
                     onExpandedChange(false)
-                }, modifier = Modifier.Companion.padding(bottom = 16.dp)
-            ) {
-                Icon(Icons.Filled.Edit, contentDescription = "Manual Add")
-            }
+                },
+                modifier = Modifier.Companion.padding(bottom = 16.dp)
+            ) { Icon(Icons.Filled.Edit, contentDescription = "Manual Add") }
             SmallFloatingActionButton(
                 onClick = {
                     onScanAdd()
                     onExpandedChange(false)
-                }, modifier = Modifier.Companion.padding(bottom = 16.dp)
-            ) {
-                Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan Add")
-            }
+                },
+                modifier = Modifier.Companion.padding(bottom = 16.dp)
+            ) { Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan Add") }
         }
         FloatingActionButton(onClick = { onExpandedChange(!isExpanded) }) {
             Icon(
@@ -63,18 +61,20 @@ fun InsertFABPreview() {
                         .padding(16.dp)
                 ) {
                     // FAB Close
-                    InsertFAB(isExpanded = false,
+                    InsertFAB(
+                        isExpanded = false,
                         onExpandedChange = {},
-                        onManualAdd = {},
-                        onScanAdd = {})
+                        onManualAdd = {}
+                    ) {}
 
                     androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(16.dp))
 
                     // FAB Extend
-                    InsertFAB(isExpanded = true,
+                    InsertFAB(
+                        isExpanded = true,
                         onExpandedChange = {},
-                        onManualAdd = {},
-                        onScanAdd = {})
+                        onManualAdd = {}
+                    ) {}
                 }
             }
         }

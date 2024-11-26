@@ -1,16 +1,24 @@
 package com.example.itemanagerv2
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.FormatListNumberedRtl
+import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.itemanagerv2.data.local.entity.CategoryAttribute
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
+import com.example.itemanagerv2.data.local.model.ItemCategoryArg
+import com.example.itemanagerv2.ui.component.CategoryListPage
 import com.example.itemanagerv2.ui.component.ItemEditDialog
 import com.example.itemanagerv2.ui.component.MainPage
 import com.example.itemanagerv2.ui.theme.BaseTheme
@@ -21,6 +29,7 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val itemViewModel: ItemViewModel by viewModels()
 
+    @ExperimentalMaterial3Api
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -31,53 +40,39 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainContent(itemViewModel: ItemViewModel) {
-    var selectedItem by remember { mutableStateOf(0) }
     val cardDetails by itemViewModel.itemCardDetails.collectAsStateWithLifecycle()
     val isLoading by itemViewModel.isLoading.collectAsStateWithLifecycle(initialValue = false)
     val categories by itemViewModel.categories.collectAsStateWithLifecycle()
+    val categoryAttributes by itemViewModel.categoryAttributes.collectAsStateWithLifecycle()
     var showEditDialog by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
     var itemCardDetailToEdit by remember { mutableStateOf<ItemCardDetail?>(null) }
 
-    MainPage(
+    val onAddAttribute = { attribute: CategoryAttribute ->
+        itemViewModel.addCategoryAttribute(attribute)
+    }
+
+    AppScaffold(
         cardDetails = cardDetails,
-        isLoading = isLoading,
-        selectedItem = selectedItem,
-        onSelectedItemChange = { selectedItem = it },
-        onLoadMore = { itemViewModel.loadMoreItems() },
-        onEditCard = { cardDetail ->
-            itemCardDetailToEdit = cardDetail
+        categories = categories,
+        categoryAttributes = categoryAttributes,
+        onEditCard = { item ->
+            itemCardDetailToEdit = item
             showEditDialog = true
         },
         onManualAdd = { showAddDialog = true },
-        onScanAdd = {},
-        onDeleteCard = { cardDetail ->
-            itemViewModel.deleteItem(cardDetail)
-            itemViewModel.refreshItems()
+        onScanAdd = { /* TODO: */ },
+        onDeleteCard = { itemCardDetail -> itemViewModel.deleteItem(itemCardDetail) },
+        onAddCategory = { categoryName -> itemViewModel.addNewCategory(categoryName) },
+        onDeleteCategory = { categoryId -> itemViewModel.deleteCategory(categoryId) },
+        onLoadCategoryAttributes = { categoryId ->
+            itemViewModel.loadCategoryAttributes(categoryId)
         },
-        onRefresh = {
-            itemViewModel.refreshItems()
-        }
+        onDeleteAttribute = { attributeId ->
+            itemViewModel.deleteCategoryAttribute(attributeId)
+        },
+        onAddAttribute = onAddAttribute
     )
-
-    // 其餘對話框程式碼保持不變...
-    val gridState = rememberLazyGridState()
-
-    LaunchedEffect(gridState) {
-        snapshotFlow {
-            val layoutInfo = gridState.layoutInfo
-            val totalItemsNumber = layoutInfo.totalItemsCount
-            val lastVisibleItemIndex = (layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0) + 1
-            lastVisibleItemIndex >
-                    (totalItemsNumber - 5) // Start loading when 5 items away from the end
-        }
-            .collect { shouldLoadMore ->
-                if (shouldLoadMore && !isLoading) {
-                    itemViewModel.loadMoreItems()
-                    Log.d("ItemCardDetails", "item card details: $cardDetails")
-                }
-            }
-    }
 
     if (showEditDialog && itemCardDetailToEdit != null) {
         itemViewModel.ensureCategoriesLoaded()
@@ -128,5 +123,71 @@ fun MainContent(itemViewModel: ItemViewModel) {
             },
             onAddImage = { /*TODO:  handle add image*/ }
         ) {}
+    }
+}
+
+@Composable
+fun AppScaffold(
+    cardDetails: List<ItemCardDetail>,
+    categories: List<ItemCategoryArg>,
+    categoryAttributes: List<CategoryAttribute>,
+    onEditCard: (ItemCardDetail) -> Unit,
+    onManualAdd: () -> Unit,
+    onScanAdd: () -> Unit,
+    onDeleteCard: (ItemCardDetail) -> Unit,
+    onAddCategory: (String) -> Unit,
+    onDeleteCategory: (Int) -> Unit,
+    onLoadCategoryAttributes: (Int) -> Unit,
+    onDeleteAttribute: (Int) -> Unit,
+    onAddAttribute: (CategoryAttribute) -> Unit
+) {
+    var selectedTab by remember { mutableStateOf(0) }
+
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.FormatListNumberedRtl, "Items") },
+                    label = { Text("Items") },
+                    selected = selectedTab == 0,
+                    onClick = { selectedTab = 0 }
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Category, "Categories") },
+                    label = { Text("Categories") },
+                    selected = selectedTab == 1,
+                    onClick = { selectedTab = 1 }
+                )
+            }
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            when (selectedTab) {
+                0 ->
+                    MainPage(
+                        cardDetails = cardDetails,
+                        onEditCard = onEditCard,
+                        onManualAdd = onManualAdd,
+                        onScanAdd = onScanAdd,
+                        onDeleteCard = onDeleteCard
+                    )
+
+                1 ->
+                    CategoryListPage(
+                        categories = categories,
+                        categoryAttributes = categoryAttributes,
+                        onAddCategory = onAddCategory,
+                        onEditCategory = { /* TODO: 實現編輯類別功能 */ },
+                        onDeleteCategory = onDeleteCategory,
+                        onLoadCategoryAttributes = onLoadCategoryAttributes,
+                        onDeleteAttribute = onDeleteAttribute,
+                        onAddAttribute = onAddAttribute
+                    )
+            }
+        }
     }
 }

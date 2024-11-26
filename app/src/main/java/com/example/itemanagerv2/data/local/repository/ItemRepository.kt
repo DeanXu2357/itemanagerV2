@@ -6,11 +6,13 @@ import com.example.itemanagerv2.data.local.AppDatabase
 import com.example.itemanagerv2.data.local.dao.*
 import com.example.itemanagerv2.data.local.entity.*
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
+import com.example.itemanagerv2.data.local.model.toNavArg
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -34,7 +36,9 @@ class ItemRepository @Inject constructor(
             val newItems = itemDao.getPaginatedItems(pageSize, currentPage * pageSize)
             if (newItems.isNotEmpty()) {
                 val itemIds = newItems.map { it.id }
-                val categories = itemCategoryDao.getCategoriesForItems(itemIds)
+                val categories = itemCategoryDao.getCategoriesForItems(itemIds).map {
+                    it.toNavArg()
+                }
                 val allImages = imageDao.getImagesForItems(itemIds)
                 val allAttributes = itemAttributeValueDao.getAttributesForItems(itemIds)
 
@@ -137,5 +141,31 @@ class ItemRepository @Inject constructor(
 
     suspend fun deleteItemAttributeValues(itemId: Int) {
         itemAttributeValueDao.deleteByItemId(itemId)
+    }
+
+    suspend fun insertCategory(name: String): Long {
+        val category = ItemCategory(
+            id = 0,
+            name = name,
+            createdAt = Date(),
+            updatedAt = Date()
+        )
+        return itemCategoryDao.insertCategory(category)
+    }
+
+    suspend fun deleteCategory(categoryId: Int) {
+        itemCategoryDao.deleteById(categoryId)
+    }
+
+    fun getCategoryAttributes(categoryId: Int): Flow<List<CategoryAttribute>> {
+        return categoryAttributeDao.getAttributesForCategory(categoryId)
+    }
+
+    suspend fun deleteCategoryAttribute(attributeId: Int) {
+        categoryAttributeDao.deleteById(attributeId)
+    }
+
+    suspend fun insertCategoryAttribute(attribute: CategoryAttribute): Long {
+        return categoryAttributeDao.insertAttribute(attribute)
     }
 }

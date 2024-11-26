@@ -2,7 +2,6 @@ package com.example.itemanagerv2.data.local.model
 
 import com.example.itemanagerv2.data.local.entity.Image
 import com.example.itemanagerv2.data.local.entity.ItemAttributeValue
-import com.example.itemanagerv2.data.local.entity.ItemCategory
 
 
 data class ItemCardDetail(
@@ -15,7 +14,7 @@ data class ItemCardDetail(
     val coverImageId: Int?,
     val createdAt: Long,
     val updatedAt: Long,
-    val category: ItemCategory?,
+    val category: ItemCategoryArg?,
     val codeImage: Image?,
     val coverImage: Image?,
     val images: List<Image>,

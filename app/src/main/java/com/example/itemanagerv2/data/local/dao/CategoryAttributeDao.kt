@@ -20,4 +20,7 @@ interface CategoryAttributeDao {
 
     @Delete
     suspend fun deleteAttribute(attribute: CategoryAttribute)
+
+    @Query("DELETE FROM category_attributes WHERE id = :attributeId")
+    suspend fun deleteById(attributeId: Int)
 }
