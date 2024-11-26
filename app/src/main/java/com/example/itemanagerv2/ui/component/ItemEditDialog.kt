@@ -36,12 +36,10 @@ fun ItemEditDialog(
     var isDetailExpanded by remember { mutableStateOf(true) }
     var isQRCodeExpanded by remember { mutableStateOf(true) }
     var selectedCategoryId by remember { mutableIntStateOf(item.categoryId) }
-
-    // Map to store attribute values with attributeId as key
-    var attributeValues by remember {
-        mutableStateOf(
-            item.attributes.associate { it.attributeId to it.value }.toMutableMap()
-        )
+    
+    // Initialize attribute values map with existing values
+    var attributeValues by remember { 
+        mutableStateOf(item.attributes.associate { it.attributeId to it.value })
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -62,17 +60,20 @@ fun ItemEditDialog(
 
                     if (editedItem.name.isNotBlank()) {
                         // Convert attributeValues map to list of ItemAttributeValue
-                        val newAttributes = attributeValues.map { (attributeId, value) ->
-                            val existingAttr = editedItem.attributes.find { it.attributeId == attributeId }
-                            ItemAttributeValue(
-                                id = existingAttr?.id ?: 0,
-                                itemId = editedItem.id,
-                                attributeId = attributeId,
-                                value = value,
-                                createdAt = existingAttr?.createdAt ?: Date(),
-                                updatedAt = Date()
-                            )
-                        }
+                        val newAttributes = categoryAttributes
+                            .filter { it.categoryId == selectedCategoryId }
+                            .map { attribute ->
+                                val value = attributeValues[attribute.id] ?: attribute.defaultValue ?: ""
+                                val existingAttr = editedItem.attributes.find { it.attributeId == attribute.id }
+                                ItemAttributeValue(
+                                    id = existingAttr?.id ?: 0,
+                                    itemId = editedItem.id,
+                                    attributeId = attribute.id,
+                                    value = value,
+                                    createdAt = existingAttr?.createdAt ?: Date(),
+                                    updatedAt = Date()
+                                )
+                            }
                         onSave(editedItem.copy(attributes = newAttributes))
                         onDismiss()
                     } else {
@@ -112,7 +113,7 @@ fun ItemEditDialog(
                         label = { Text("Name") },
                         modifier = fieldModifier
                     )
-
+                    
                     CategoryDropdown(
                         categories = categories,
                         selectedCategoryId = selectedCategoryId,
@@ -120,7 +121,7 @@ fun ItemEditDialog(
                             selectedCategoryId = categoryId
                             editedItem = editedItem.copy(categoryId = categoryId)
                             // Clear attribute values when category changes
-                            attributeValues.clear()
+                            attributeValues = emptyMap()
                             // Load attributes for the selected category
                             onCategorySelected(categoryId)
                         },
@@ -136,13 +137,10 @@ fun ItemEditDialog(
                                     OutlinedTextField(
                                         value = attributeValues[attribute.id] ?: attribute.defaultValue ?: "",
                                         onValueChange = { value ->
-//                                            if (attribute.isEditable) {
-//                                                attributeValues[attribute.id] = value
-//                                            }
+                                            attributeValues = attributeValues + (attribute.id to value)
                                         },
                                         label = { Text(attribute.name) },
                                         modifier = fieldModifier,
-//                                        enabled = attribute.isEditable,
                                         isError = attribute.isRequired && (attributeValues[attribute.id]?.isBlank() ?: true)
                                     )
                                 }
@@ -151,13 +149,10 @@ fun ItemEditDialog(
                                     OutlinedTextField(
                                         value = attributeValues[attribute.id] ?: attribute.defaultValue ?: "",
                                         onValueChange = { value ->
-//                                            if (attribute.isEditable) {
-//                                                attributeValues[attribute.id] = value
-//                                            }
+                                            attributeValues = attributeValues + (attribute.id to value)
                                         },
                                         label = { Text("${attribute.name} (YYYY-MM-DD)") },
                                         modifier = fieldModifier,
-//                                        enabled = attribute.isEditable,
                                         isError = attribute.isRequired && (attributeValues[attribute.id]?.isBlank() ?: true)
                                     )
                                 }
@@ -269,7 +264,7 @@ fun ItemEditDialogPreview() {
             categoryId = 1,
             name = "Brand",
             isRequired = true,
-            isEditable = false,
+            isEditable = true,
             valueType = CategoryAttribute.TYPE_STRING,
             defaultValue = null,
             createdAt = currentDate,
@@ -366,7 +361,8 @@ fun ItemEditDialogPreview() {
             onDismiss = {},
             onSave = {},
             onAddImage = {},
-            onDeleteImage = {}
+            onDeleteImage = {},
+            onCategorySelected = {}
         )
     }
 }
