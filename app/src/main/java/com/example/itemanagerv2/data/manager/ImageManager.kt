@@ -3,6 +3,7 @@ package com.example.itemanagerv2.data.manager
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
@@ -23,5 +24,19 @@ class ImageManager @Inject constructor(private val context: Context) {
 
     fun getImageFromPath(path: String): Bitmap? {
         return BitmapFactory.decodeFile(path)
+    }
+
+    fun deleteImage(path: String): Boolean {
+        return try {
+            val file = File(path)
+            if (file.exists()) {
+                file.delete()
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("ImageManager", "Error deleting image file: $path", e)
+            false
+        }
     }
 }

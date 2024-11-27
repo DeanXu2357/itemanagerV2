@@ -1,8 +1,12 @@
 package com.example.itemanagerv2
 
+import android.Manifest
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,22 +28,87 @@ import com.example.itemanagerv2.ui.component.MainPage
 import com.example.itemanagerv2.ui.theme.BaseTheme
 import com.example.itemanagerv2.viewmodel.ItemViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import android.graphics.BitmapFactory
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val itemViewModel: ItemViewModel by viewModels()
+    private var currentEditingItemId: Int = 0
+    private var pendingImagePick: Boolean = false
+
+    private val imagePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { selectedUri ->
+            // Convert URI to Bitmap
+            contentResolver.openInputStream(selectedUri)?.use { inputStream ->
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                itemViewModel.addImageToItem(currentEditingItemId, bitmap)
+            }
+        }
+    }
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted && pendingImagePick) {
+            pendingImagePick = false
+            imagePickerLauncher.launch("image/*")
+        }
+    }
+
+    private fun checkAndRequestPermission(onPermissionGranted: () -> Unit) {
+        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_IMAGES
+        } else {
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+
+        when {
+            ContextCompat.checkSelfPermission(
+                this,
+                permission
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                // Permission is already granted, proceed with the operation
+                onPermissionGranted()
+            }
+            else -> {
+                // Request the permission
+                requestPermissionLauncher.launch(permission)
+            }
+        }
+    }
 
     @ExperimentalMaterial3Api
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContent { BaseTheme { MainContent(itemViewModel) } }
+        setContent { 
+            BaseTheme { 
+                MainContent(
+                    itemViewModel = itemViewModel,
+                    onPickImage = { itemId -> 
+                        currentEditingItemId = itemId
+                        pendingImagePick = true
+                        checkAndRequestPermission {
+                            pendingImagePick = false
+                            imagePickerLauncher.launch("image/*")
+                        }
+                    }
+                ) 
+            } 
+        }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainContent(itemViewModel: ItemViewModel) {
+fun MainContent(
+    itemViewModel: ItemViewModel,
+    onPickImage: (Int) -> Unit
+) {
     val cardDetails by itemViewModel.itemCardDetails.collectAsStateWithLifecycle()
     val isLoading by itemViewModel.isLoading.collectAsStateWithLifecycle(initialValue = false)
     val categories by itemViewModel.categories.collectAsStateWithLifecycle()
@@ -92,8 +161,13 @@ fun MainContent(itemViewModel: ItemViewModel) {
                 showEditDialog = false
                 itemCardDetailToEdit = null
             },
-            onAddImage = { /*TODO: handle add image*/ },
-            onDeleteImage = { /*TODO: handle delete image*/ },
+            onAddImage = { onPickImage(itemCardDetailToEdit!!.id) },
+            onDeleteImage = { imageId -> 
+                itemCardDetailToEdit?.let { item ->
+                    val isCoverImage = item.coverImageId == imageId
+                    itemViewModel.deleteImage(item.id, imageId, isCoverImage)
+                }
+            },
             onCategorySelected = { categoryId ->
                 itemViewModel.loadCategoryAttributes(categoryId)
             }
@@ -129,8 +203,13 @@ fun MainContent(itemViewModel: ItemViewModel) {
                 itemViewModel.refreshItems()
                 showAddDialog = false
             },
-            onAddImage = { /*TODO:  handle add image*/ },
-            onDeleteImage = { /*TODO: handle delete image*/ },
+            onAddImage = { onPickImage(0) }, // 0 for new items
+            onDeleteImage = { imageId -> 
+                itemCardDetailToEdit?.let { item ->
+                    val isCoverImage = item.coverImageId == imageId
+                    itemViewModel.deleteImage(item.id, imageId, isCoverImage)
+                }
+            },
             onCategorySelected = { categoryId ->
                 itemViewModel.loadCategoryAttributes(categoryId)
             }

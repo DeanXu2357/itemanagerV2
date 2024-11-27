@@ -7,23 +7,25 @@ import com.example.itemanagerv2.data.local.dao.*
 import com.example.itemanagerv2.data.local.entity.*
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
 import com.example.itemanagerv2.data.local.model.toNavArg
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
 
 @Singleton
-class ItemRepository @Inject constructor(
-    private val database: AppDatabase,
-    private val itemDao: ItemDao,
-    private val itemCategoryDao: ItemCategoryDao,
-    private val categoryAttributeDao: CategoryAttributeDao,
-    private val itemAttributeValueDao: ItemAttributeValueDao,
-    private val imageDao: ImageDao
+class ItemRepository
+@Inject
+constructor(
+        private val database: AppDatabase,
+        private val itemDao: ItemDao,
+        private val itemCategoryDao: ItemCategoryDao,
+        private val categoryAttributeDao: CategoryAttributeDao,
+        private val itemAttributeValueDao: ItemAttributeValueDao,
+        private val imageDao: ImageDao
 ) {
     private var currentPage = 0
     private val pageSize = 20
@@ -36,30 +38,30 @@ class ItemRepository @Inject constructor(
             val newItems = itemDao.getPaginatedItems(pageSize, currentPage * pageSize)
             if (newItems.isNotEmpty()) {
                 val itemIds = newItems.map { it.id }
-                val categories = itemCategoryDao.getCategoriesForItems(itemIds).map {
-                    it.toNavArg()
-                }
+                val categories =
+                        itemCategoryDao.getCategoriesForItems(itemIds).map { it.toNavArg() }
                 val allImages = imageDao.getImagesForItems(itemIds)
                 val allAttributes = itemAttributeValueDao.getAttributesForItems(itemIds)
 
-                val newItemCardDetails = newItems.map { item ->
-                    ItemCardDetail(
-                        id = item.id,
-                        name = item.name,
-                        categoryId = item.categoryId,
-                        codeType = item.codeType,
-                        codeContent = item.codeContent,
-                        codeImageId = item.codeImageId,
-                        coverImageId = item.coverImageId,
-                        createdAt = item.createdAt,
-                        updatedAt = item.updatedAt,
-                        category = categories.find { it.id == item.categoryId },
-                        codeImage = allImages.find { it.id == item.codeImageId },
-                        coverImage = allImages.find { it.id == item.coverImageId },
-                        images = allImages.filter { it.itemId == item.id },
-                        attributes = allAttributes.filter { it.itemId == item.id }
-                    )
-                }
+                val newItemCardDetails =
+                        newItems.map { item ->
+                            ItemCardDetail(
+                                    id = item.id,
+                                    name = item.name,
+                                    categoryId = item.categoryId,
+                                    codeType = item.codeType,
+                                    codeContent = item.codeContent,
+                                    codeImageId = item.codeImageId,
+                                    coverImageId = item.coverImageId,
+                                    createdAt = item.createdAt,
+                                    updatedAt = item.updatedAt,
+                                    category = categories.find { it.id == item.categoryId },
+                                    codeImage = allImages.find { it.id == item.codeImageId },
+                                    coverImage = allImages.find { it.id == item.coverImageId },
+                                    images = allImages.filter { it.itemId == item.id },
+                                    attributes = allAttributes.filter { it.itemId == item.id }
+                            )
+                        }
 
                 allItems.addAll(newItemCardDetails)
                 emit(allItems.toList())
@@ -83,6 +85,10 @@ class ItemRepository @Inject constructor(
 
     suspend fun insertImage(image: Image): Long {
         return imageDao.insertImage(image)
+    }
+
+    suspend fun deleteImage(image: Image) {
+        imageDao.deleteImage(image)
     }
 
     fun resetPagination() {
@@ -111,9 +117,7 @@ class ItemRepository @Inject constructor(
                 // First get all image IDs
                 val images = imageDao.getImagesByItemId(itemId)
                 // Delete actual image files
-                images.forEach { image ->
-                    deleteImageFile(image.filePath)
-                }
+                images.forEach { image -> deleteImageFile(image.filePath) }
                 // Delete image records from database
                 imageDao.deleteByItemId(itemId)
 
@@ -134,7 +138,6 @@ class ItemRepository @Inject constructor(
         }
     }
 
-
     suspend fun updateItemAttributeValue(attributeValue: ItemAttributeValue) {
         itemAttributeValueDao.updateAttributeValue(attributeValue)
     }
@@ -144,12 +147,7 @@ class ItemRepository @Inject constructor(
     }
 
     suspend fun insertCategory(name: String): Long {
-        val category = ItemCategory(
-            id = 0,
-            name = name,
-            createdAt = Date(),
-            updatedAt = Date()
-        )
+        val category = ItemCategory(id = 0, name = name, createdAt = Date(), updatedAt = Date())
         return itemCategoryDao.insertCategory(category)
     }
 
