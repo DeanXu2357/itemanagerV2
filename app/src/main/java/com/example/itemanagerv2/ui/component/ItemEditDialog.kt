@@ -59,7 +59,6 @@ fun ItemEditDialog(
                     }
 
                     if (editedItem.name.isNotBlank()) {
-                        // Convert attributeValues map to list of ItemAttributeValue
                         val newAttributes = categoryAttributes
                             .filter { it.categoryId == selectedCategoryId }
                             .map { attribute ->
@@ -91,10 +90,30 @@ fun ItemEditDialog(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
+            val handleDeleteImage: (Int) -> Unit = { imageId -> 
+                // If deleting cover image, clear coverImageId
+                if (imageId == editedItem.coverImageId) {
+                    editedItem = editedItem.copy(
+                        coverImageId = null,
+                        coverImage = null
+                    )
+                }
+                onDeleteImage(imageId)
+            }
+
+            val handleSetCover: (Int) -> Unit = { imageId -> 
+                editedItem = editedItem.copy(
+                    coverImageId = imageId,
+                    coverImage = editedItem.images.find { it.id == imageId }
+                )
+            }
+
             MultiPreviewImageCarousel(
                 images = editedItem.images,
                 onAddClick = onAddImage,
-                onDeleteClick = onDeleteImage
+                onDeleteClick = handleDeleteImage,
+                onSetCover = handleSetCover,
+                selectedCoverImageId = editedItem.coverImageId
             )
 
             ExpandableSection(
@@ -128,6 +147,7 @@ fun ItemEditDialog(
                         modifier = fieldModifier
                     )
 
+                    // FIXME: It should display fields dynamically based on ItemAttributeValue belong to the item, not CategoryAttribute
                     // Dynamic attribute fields based on selected category
                     categoryAttributes
                         .filter { it.categoryId == selectedCategoryId }

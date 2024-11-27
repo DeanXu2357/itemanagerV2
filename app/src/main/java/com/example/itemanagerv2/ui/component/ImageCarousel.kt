@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,7 +30,9 @@ import kotlin.math.absoluteValue
 fun MultiPreviewImageCarousel(
     images: List<Image>,
     onAddClick: () -> Unit,
-    onDeleteClick: (Int) -> Unit
+    onDeleteClick: (Int) -> Unit,
+    onSetCover: (Int) -> Unit,
+    selectedCoverImageId: Int?
 ) {
     val pagerState = rememberPagerState(pageCount = { images.size + 1 })
     val coroutineScope = rememberCoroutineScope()
@@ -70,11 +73,46 @@ fun MultiPreviewImageCarousel(
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
                             )
-                            IconButton(
-                                onClick = { onDeleteClick(page) },
-                                modifier = Modifier.align(Alignment.TopEnd)
+                            
+                            // Action buttons row
+                            Row(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Icon(Icons.Default.Delete, contentDescription = "Delete")
+                                // Set as cover button
+                                IconButton(
+                                    onClick = { onSetCover(images[page].id) },
+                                    modifier = Modifier.background(
+                                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                        shape = CircleShape
+                                    )
+                                ) {
+                                    Icon(
+                                        Icons.Default.Image,
+                                        contentDescription = "Set as cover",
+                                        tint = if (images[page].id == selectedCoverImageId)
+                                            MaterialTheme.colorScheme.primary
+                                        else
+                                            MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                                
+                                // Delete button
+                                IconButton(
+                                    onClick = { onDeleteClick(images[page].id) },
+                                    modifier = Modifier.background(
+                                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                        shape = CircleShape
+                                    )
+                                ) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = "Delete",
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
                             }
                         }
                     }
@@ -129,7 +167,6 @@ fun MultiPreviewImageCarousel(
         }
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable
@@ -187,7 +224,9 @@ fun MultiPreviewImageCarouselPreview() {
         MultiPreviewImageCarousel(
             images = sampleImages,
             onAddClick = { /* Preview: Do nothing */ },
-            onDeleteClick = { /* Preview: Do nothing */ }
+            onDeleteClick = { /* Preview: Do nothing */ },
+            onSetCover = { /* Preview: Do nothing */ },
+            selectedCoverImageId = sampleImages.firstOrNull()?.id
         )
     }
 }

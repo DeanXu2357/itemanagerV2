@@ -16,11 +16,13 @@ import com.example.itemanagerv2.data.manager.ImageManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.Date
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @HiltViewModel
 class ItemViewModel
@@ -194,9 +196,49 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
                         updatedAt = Date()
                     )
                 itemRepository.insertImage(image)
+                refreshItems() // Refresh to show the new image
             } catch (e: Exception) {
                 _error.value = "Error adding image: ${e.message}"
                 Log.e("ItemViewModel", "Error adding image", e)
+            }
+        }
+    }
+
+    fun deleteImage(itemId: Int, imageId: Int, isCoverImage: Boolean) {
+        viewModelScope.launch {
+            try {
+                // If this is the cover image, update the item to clear coverImageId
+                if (isCoverImage) {
+                    val item = _itemCardDetails.value.find { it.id == itemId }
+                    item?.let {
+                        updateItemCardDetail(
+                            it.copy(
+                                coverImageId = null,
+                                coverImage = null
+                            )
+                        )
+                    }
+                }
+                
+                // Delete the image file and database record
+                val image = _itemCardDetails.value
+                    .find { it.id == itemId }
+                    ?.images
+                    ?.find { it.id == imageId }
+                
+                image?.let {
+                    withContext(Dispatchers.IO) {
+                        // 使用 ImageManager 刪除實體文件
+                        imageManager.deleteImage(it.filePath)
+                        // 使用 Repository 刪除數據庫記錄
+                        itemRepository.deleteImage(it)
+                    }
+                }
+                
+                refreshItems() 
+            } catch (e: Exception) {
+                _error.value = "Error deleting image: ${e.message}"
+                Log.e("ItemViewModel", "Error deleting image", e)
             }
         }
     }
@@ -249,6 +291,8 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
                         )
                     )
                 }
+                
+                refreshItems() // Refresh to show updated item
             } catch (e: Exception) {
                 _error.value = "Error updating the item：${e.message}"
                 Log.e("ItemViewModel", "Error updating item", e)
