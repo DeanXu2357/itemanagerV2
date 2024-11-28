@@ -49,10 +49,11 @@ fun MainPage(
                 columns = GridCells.Fixed(2), state = gridState, modifier = Modifier.fillMaxSize()
             ) {
                 items(cardDetails) { item ->
-                    ItemCard(cardDetail = item,
+                    ItemCard(
+                        cardDetail = item,
                         onEdit = { onEditCard(item) },
-                        onCopy = { /* TODO: 實現複製功能 */ },
-                        onDelete = { onDeleteCard(item) })
+                        onDelete = { onDeleteCard(item) }
+                    )
                 }
             }
         }
@@ -150,13 +151,13 @@ fun MainPagePreview() {
         )
     )
 
-
     BaseTheme {
         MainPage(
             cardDetails = previewCardDetails,
             onEditCard = { },
             onManualAdd = { },
-            onScanAdd = { }
-        ) { }
+            onScanAdd = { },
+            onDeleteCard = { }
+        )
     }
 }

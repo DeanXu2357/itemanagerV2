@@ -17,3 +17,5 @@
 .cxx
 local.properties
 /.kotlin/errors/
+app/debug/
+app/release/
