@@ -122,11 +122,19 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
                     )
                 }
 
+                // Save temporary images to storage and create Image entities
                 newItem.images.forEach { image ->
+                    val finalPath = if (image.filePath.startsWith("temp_")) {
+                        // Save temporary image to storage
+                        imageManager.saveTemporaryBitmap(image.filePath) ?: image.filePath
+                    } else {
+                        image.filePath
+                    }
+
                     itemRepository.insertImage(
                         Image(
                             id = 0,
-                            filePath = image.filePath,
+                            filePath = finalPath,
                             itemId = newItemId.toInt(),
                             order = image.order,
                             content = image.content,
@@ -185,10 +193,13 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
     fun addImageToItem(itemId: Int, bitmap: Bitmap) {
         viewModelScope.launch {
             try {
-                val filePath = imageManager.saveImage(bitmap)
+                // Generate temporary ID and store bitmap in memory
+                val tempId = imageManager.generateTemporaryImageId()
+                imageManager.storeTemporaryBitmap(tempId, bitmap)
+                
                 val image =
                     Image(
-                        filePath = filePath,
+                        filePath = tempId,  // Use temporary ID as file path
                         itemId = itemId,
                         order = 0, // TODO: Set the correct order
                         content = null,
@@ -228,9 +239,9 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
                 
                 image?.let {
                     withContext(Dispatchers.IO) {
-                        // 使用 ImageManager 刪除實體文件
+                        // Delete image using ImageManager
                         imageManager.deleteImage(it.filePath)
-                        // 使用 Repository 刪除數據庫記錄
+                        // Delete database record using Repository
                         itemRepository.deleteImage(it)
                     }
                 }
@@ -291,6 +302,25 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
                         )
                     )
                 }
+
+                // Handle any temporary images
+                updatedItem.images.forEach { image ->
+                    if (image.filePath.startsWith("temp_")) {
+                        val finalPath = imageManager.saveTemporaryBitmap(image.filePath)
+                        finalPath?.let {
+                            val updatedImage = Image(
+                                id = image.id,
+                                filePath = it,
+                                itemId = image.itemId,
+                                order = image.order,
+                                content = image.content,
+                                createdAt = image.createdAt,
+                                updatedAt = Date()
+                            )
+                            itemRepository.updateImage(updatedImage)
+                        }
+                    }
+                }
                 
                 refreshItems() // Refresh to show updated item
             } catch (e: Exception) {
@@ -306,10 +336,15 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
         viewModelScope.launch {
             try {
                 _deleteStatus.value = DeleteStatus.Loading
+                
+                // Delete all images associated with the item
+                itemCardDetail.images.forEach { image ->
+                    imageManager.deleteImage(image.filePath)
+                }
+                
                 itemRepository.deleteItemWithRelations(itemCardDetail.id)
                 _deleteStatus.value = DeleteStatus.Success
             } catch (e: Exception) {
-                // Handle error case
                 Log.e("ItemViewModel", "Error deleting item", e)
                 _deleteStatus.value = DeleteStatus.Error(e.message ?: "Unknown error")
             }
@@ -357,7 +392,7 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
         viewModelScope.launch {
             try {
                 itemRepository.deleteCategoryAttribute(attributeId)
-                // 刷新當前屬性列表
+                // Refresh current attributes list
                 _categoryAttributes.value =
                     _categoryAttributes.value.filter { it.id != attributeId }
             } catch (e: Exception) {

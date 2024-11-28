@@ -87,6 +87,10 @@ constructor(
         return imageDao.insertImage(image)
     }
 
+    suspend fun updateImage(image: Image) {
+        imageDao.updateImage(image)
+    }
+
     suspend fun deleteImage(image: Image) {
         imageDao.deleteImage(image)
     }

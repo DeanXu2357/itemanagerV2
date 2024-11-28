@@ -12,6 +12,36 @@ import javax.inject.Singleton
 
 @Singleton
 class ImageManager @Inject constructor(private val context: Context) {
+    // Map to store temporary bitmaps before saving to storage
+    private val temporaryBitmaps = mutableMapOf<String, Bitmap>()
+
+    // Generate a temporary ID for an image without saving it
+    fun generateTemporaryImageId(): String {
+        return "temp_${UUID.randomUUID()}"
+    }
+
+    // Store bitmap temporarily in memory
+    fun storeTemporaryBitmap(tempId: String, bitmap: Bitmap) {
+        temporaryBitmaps[tempId] = bitmap
+    }
+
+    // Save a temporary bitmap to storage and return its file path
+    fun saveTemporaryBitmap(tempId: String): String? {
+        val bitmap = temporaryBitmaps[tempId] ?: return null
+        val filePath = saveImage(bitmap)
+        temporaryBitmaps.remove(tempId)
+        return filePath
+    }
+
+    // Clear temporary bitmap from memory
+    fun clearTemporaryBitmap(tempId: String) {
+        temporaryBitmaps.remove(tempId)
+    }
+
+    // Get temporary bitmap from memory
+    fun getTemporaryBitmap(tempId: String): Bitmap? {
+        return temporaryBitmaps[tempId]
+    }
 
     fun saveImage(bitmap: Bitmap): String {
         val filename = "${UUID.randomUUID()}.jpg"
@@ -23,10 +53,20 @@ class ImageManager @Inject constructor(private val context: Context) {
     }
 
     fun getImageFromPath(path: String): Bitmap? {
+        // Check if it's a temporary ID
+        if (path.startsWith("temp_")) {
+            return temporaryBitmaps[path]
+        }
         return BitmapFactory.decodeFile(path)
     }
 
     fun deleteImage(path: String): Boolean {
+        // If it's a temporary image, just remove it from memory
+        if (path.startsWith("temp_")) {
+            temporaryBitmaps.remove(path)
+            return true
+        }
+
         return try {
             val file = File(path)
             if (file.exists()) {
