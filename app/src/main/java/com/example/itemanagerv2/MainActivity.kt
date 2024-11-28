@@ -30,6 +30,7 @@ import com.example.itemanagerv2.viewmodel.ItemViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import android.graphics.BitmapFactory
 import android.content.pm.PackageManager
+import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
 
 @AndroidEntryPoint
@@ -37,6 +38,9 @@ class MainActivity : ComponentActivity() {
     private val itemViewModel: ItemViewModel by viewModels()
     private var currentEditingItemId: Int = 0
     private var pendingImagePick: Boolean = false
+    private var showEditDialog = mutableStateOf(false)
+    private var showAddDialog = mutableStateOf(false)
+    private var selectedTab = mutableStateOf(0)
 
     private val imagePickerLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -85,6 +89,21 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Handle back press with unified logic
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                when {
+                    // If dialog is showing, close it first
+                    showEditDialog.value -> showEditDialog.value = false
+                    showAddDialog.value -> showAddDialog.value = false
+                    // If on CategoryListPage, return to MainPage
+                    selectedTab.value == 1 -> selectedTab.value = 0
+                    // If on MainPage, allow app exit
+                    else -> isEnabled = false
+                }
+            }
+        })
+
         setContent { 
             BaseTheme { 
                 MainContent(
@@ -96,7 +115,10 @@ class MainActivity : ComponentActivity() {
                             pendingImagePick = false
                             imagePickerLauncher.launch("image/*")
                         }
-                    }
+                    },
+                    showEditDialog = showEditDialog,
+                    showAddDialog = showAddDialog,
+                    selectedTab = selectedTab
                 ) 
             } 
         }
@@ -107,14 +129,15 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainContent(
     itemViewModel: ItemViewModel,
-    onPickImage: (Int) -> Unit
+    onPickImage: (Int) -> Unit,
+    showEditDialog: MutableState<Boolean>,
+    showAddDialog: MutableState<Boolean>,
+    selectedTab: MutableState<Int>
 ) {
     val cardDetails by itemViewModel.itemCardDetails.collectAsStateWithLifecycle()
     val isLoading by itemViewModel.isLoading.collectAsStateWithLifecycle(initialValue = false)
     val categories by itemViewModel.categories.collectAsStateWithLifecycle()
     val categoryAttributes by itemViewModel.categoryAttributes.collectAsStateWithLifecycle()
-    var showEditDialog by remember { mutableStateOf(false) }
-    var showAddDialog by remember { mutableStateOf(false) }
     var itemCardDetailToEdit by remember { mutableStateOf<ItemCardDetail?>(null) }
 
     val onAddAttribute = { attribute: CategoryAttribute ->
@@ -127,11 +150,11 @@ fun MainContent(
         categoryAttributes = categoryAttributes,
         onEditCard = { item ->
             itemCardDetailToEdit = item
-            showEditDialog = true
+            showEditDialog.value = true
             // Load attributes for the item's category
             itemViewModel.loadCategoryAttributes(item.categoryId)
         },
-        onManualAdd = { showAddDialog = true },
+        onManualAdd = { showAddDialog.value = true },
         onScanAdd = { /* TODO: */ },
         onDeleteCard = { itemCardDetail -> itemViewModel.deleteItem(itemCardDetail) },
         onAddCategory = { categoryName -> itemViewModel.addNewCategory(categoryName) },
@@ -142,23 +165,24 @@ fun MainContent(
         onDeleteAttribute = { attributeId ->
             itemViewModel.deleteCategoryAttribute(attributeId)
         },
-        onAddAttribute = onAddAttribute
+        onAddAttribute = onAddAttribute,
+        selectedTab = selectedTab
     )
 
-    if (showEditDialog && itemCardDetailToEdit != null) {
+    if (showEditDialog.value && itemCardDetailToEdit != null) {
         itemViewModel.ensureCategoriesLoaded()
         ItemEditDialog(
             item = itemCardDetailToEdit!!,
             categories = categories,
             categoryAttributes = categoryAttributes,
             onDismiss = {
-                showEditDialog = false
+                showEditDialog.value = false
                 itemCardDetailToEdit = null
             },
             onSave = { itemCardDetail ->
                 itemViewModel.updateItemCardDetail(itemCardDetail)
                 itemViewModel.refreshItems()
-                showEditDialog = false
+                showEditDialog.value = false
                 itemCardDetailToEdit = null
             },
             onAddImage = { onPickImage(itemCardDetailToEdit!!.id) },
@@ -174,7 +198,7 @@ fun MainContent(
         )
     }
 
-    if (showAddDialog) {
+    if (showAddDialog.value) {
         itemViewModel.ensureCategoriesLoaded()
         val emptyItem =
             ItemCardDetail(
@@ -197,11 +221,11 @@ fun MainContent(
             item = emptyItem,
             categories = categories,
             categoryAttributes = categoryAttributes,
-            onDismiss = { showAddDialog = false },
+            onDismiss = { showAddDialog.value = false },
             onSave = { newItem ->
                 itemViewModel.addNewItem(newItem)
                 itemViewModel.refreshItems()
-                showAddDialog = false
+                showAddDialog.value = false
             },
             onAddImage = { onPickImage(0) }, // 0 for new items
             onDeleteImage = { imageId -> 
@@ -230,24 +254,23 @@ fun AppScaffold(
     onDeleteCategory: (Int) -> Unit,
     onLoadCategoryAttributes: (Int) -> Unit,
     onDeleteAttribute: (Int) -> Unit,
-    onAddAttribute: (CategoryAttribute) -> Unit
+    onAddAttribute: (CategoryAttribute) -> Unit,
+    selectedTab: MutableState<Int>
 ) {
-    var selectedTab by remember { mutableStateOf(0) }
-
     Scaffold(
         bottomBar = {
             NavigationBar {
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.FormatListNumberedRtl, "Items") },
                     label = { Text("Items") },
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 }
+                    selected = selectedTab.value == 0,
+                    onClick = { selectedTab.value = 0 }
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Category, "Categories") },
                     label = { Text("Categories") },
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 }
+                    selected = selectedTab.value == 1,
+                    onClick = { selectedTab.value = 1 }
                 )
             }
         }
@@ -257,7 +280,7 @@ fun AppScaffold(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            when (selectedTab) {
+            when (selectedTab.value) {
                 0 ->
                     MainPage(
                         cardDetails = cardDetails,
