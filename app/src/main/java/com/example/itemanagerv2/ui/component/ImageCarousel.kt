@@ -49,9 +49,11 @@ fun MultiPreviewImageCarousel(
                 .fillMaxWidth()
                 .height(300.dp)
         ) { page ->
-            Box(modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 16.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+            ) {
                 if (page < displayedImages.size) {
                     val pageOffset = (page - pagerState.currentPage).toFloat()
                     val scale =
@@ -167,7 +169,8 @@ fun MultiPreviewImageCarousel(
         Row(
             Modifier
                 .height(50.dp)
-                .fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                .fillMaxWidth(), horizontalArrangement = Arrangement.Center
+        ) {
             repeat(pagerState.pageCount) { iteration ->
                 val color =
                     if (pagerState.currentPage == iteration) {

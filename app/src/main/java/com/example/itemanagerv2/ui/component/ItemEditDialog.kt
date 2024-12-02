@@ -42,6 +42,11 @@ fun ItemEditDialog(
         mutableStateOf(item.attributes.associate { it.attributeId to it.value })
     }
 
+    // Update editedItem when item changes (e.g., when new images are added)
+    LaunchedEffect(item) {
+        editedItem = item
+    }
+
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -91,7 +96,7 @@ fun ItemEditDialog(
                 .verticalScroll(rememberScrollState())
         ) {
             MultiPreviewImageCarousel(
-                images = item.images,
+                images = editedItem.images,
                 onAddClick = onAddImage,
                 onDeleteClick = { imageId -> 
                     if (imageId == editedItem.coverImageId) {
@@ -102,7 +107,7 @@ fun ItemEditDialog(
                 onSetCover = { imageId ->
                     editedItem = editedItem.copy(
                         coverImageId = imageId,
-                        coverImage = item.images.find { it.id == imageId }
+                        coverImage = editedItem.images.find { it.id == imageId }
                     )
                 },
                 selectedCoverImageId = editedItem.coverImageId
@@ -265,9 +270,9 @@ fun FullScreenDialogTopBar(title: String, onDismiss: () -> Unit, onSave: () -> U
 fun ItemEditDialogPreview() {
     val currentDate = Date()
     val sampleCategories = listOf(
-        ItemCategoryArg(id = 1, name = "Electronics"),
-        ItemCategoryArg(id = 2, name = "Furniture"),
-        ItemCategoryArg(id = 3, name = "Books")
+        ItemCategoryArg(1, "Electronics"),
+        ItemCategoryArg(2, "Furniture"),
+        ItemCategoryArg(3, "Books")
     )
 
     val sampleAttributes = listOf(
@@ -307,7 +312,7 @@ fun ItemEditDialogPreview() {
     )
 
     BaseTheme {
-        val sampleCategory = ItemCategoryArg(id = 1, name = "Electronics")
+        val sampleCategory = ItemCategoryArg(1, "Electronics")
 
         val sampleImages = listOf(
             Image(

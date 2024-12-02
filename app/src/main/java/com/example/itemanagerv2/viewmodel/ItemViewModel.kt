@@ -21,6 +21,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -182,7 +183,17 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
         }
     }
 
-    fun addImageToItem(itemId: Int, bitmap: Bitmap) {
+    suspend fun getItemDetails(itemId: Int): ItemCardDetail? {
+        return try {
+            itemRepository.getItemCardDetails().first().find { it.id == itemId }
+        } catch (e: Exception) {
+            _error.value = "Error getting item details: ${e.message}"
+            Log.e("ItemViewModel", "Error getting item details", e)
+            null
+        }
+    }
+
+    fun addImageToItem(itemId: Int, bitmap: Bitmap, onImageAdded: (ItemCardDetail?) -> Unit) {
         viewModelScope.launch {
             try {
                 val filePath = imageManager.saveImage(bitmap)
@@ -195,11 +206,32 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
                         createdAt = Date(),
                         updatedAt = Date()
                     )
-                itemRepository.insertImage(image)
-                refreshItems() // Refresh to show the new image
+                val imageId = itemRepository.insertImage(image)
+                
+                // Update the image with its new ID
+                val savedImage = image.copy(id = imageId.toInt())
+                
+                // Find the current item and update its images list
+                val currentItem = _itemCardDetails.value.find { it.id == itemId }
+                currentItem?.let { item ->
+                    val updatedItem = item.copy(
+                        images = item.images + savedImage,
+                        // If this is the first image, set it as cover image
+                        coverImageId = if (item.coverImageId == null) savedImage.id else item.coverImageId,
+                        coverImage = if (item.coverImageId == null) savedImage else item.coverImage
+                    )
+                    
+                    // Update the items list with the modified item
+                    _itemCardDetails.value = _itemCardDetails.value.map { 
+                        if (it.id == itemId) updatedItem else it 
+                    }
+                    
+                    onImageAdded(updatedItem)
+                }
             } catch (e: Exception) {
                 _error.value = "Error adding image: ${e.message}"
                 Log.e("ItemViewModel", "Error adding image", e)
+                onImageAdded(null)
             }
         }
     }
@@ -235,7 +267,16 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
                     }
                 }
                 
-                refreshItems() 
+                // Update the items list by removing the deleted image
+                val currentItem = _itemCardDetails.value.find { it.id == itemId }
+                currentItem?.let { item ->
+                    val updatedItem = item.copy(
+                        images = item.images.filter { it.id != imageId }
+                    )
+                    _itemCardDetails.value = _itemCardDetails.value.map { 
+                        if (it.id == itemId) updatedItem else it 
+                    }
+                }
             } catch (e: Exception) {
                 _error.value = "Error deleting image: ${e.message}"
                 Log.e("ItemViewModel", "Error deleting image", e)
@@ -292,7 +333,10 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
                     )
                 }
                 
-                refreshItems() // Refresh to show updated item
+                // Update the items list
+                _itemCardDetails.value = _itemCardDetails.value.map { 
+                    if (it.id == updatedItem.id) updatedItem else it 
+                }
             } catch (e: Exception) {
                 _error.value = "Error updating the item：${e.message}"
                 Log.e("ItemViewModel", "Error updating item", e)

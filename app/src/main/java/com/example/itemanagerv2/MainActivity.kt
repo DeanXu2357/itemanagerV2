@@ -41,6 +41,7 @@ class MainActivity : ComponentActivity() {
     private var showEditDialog = mutableStateOf(false)
     private var showAddDialog = mutableStateOf(false)
     private var selectedTab = mutableStateOf(0)
+    private var onImageAddedCallback: ((ItemCardDetail) -> Unit)? = null
 
     private val imagePickerLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -49,7 +50,11 @@ class MainActivity : ComponentActivity() {
             // Convert URI to Bitmap
             contentResolver.openInputStream(selectedUri)?.use { inputStream ->
                 val bitmap = BitmapFactory.decodeStream(inputStream)
-                itemViewModel.addImageToItem(currentEditingItemId, bitmap)
+                itemViewModel.addImageToItem(currentEditingItemId, bitmap) { updatedItem ->
+                    updatedItem?.let { item ->
+                        onImageAddedCallback?.invoke(item)
+                    }
+                }
             }
         }
     }
@@ -103,23 +108,25 @@ class MainActivity : ComponentActivity() {
             }
         })
 
-        setContent { 
-            BaseTheme { 
+        setContent {
+            BaseTheme {
                 MainContent(
                     itemViewModel = itemViewModel,
-                    onPickImage = { itemId -> 
+                    onPickImage = { itemId, onImageAdded ->
                         currentEditingItemId = itemId
+                        onImageAddedCallback = onImageAdded
                         pendingImagePick = true
                         checkAndRequestPermission {
                             pendingImagePick = false
                             imagePickerLauncher.launch("image/*")
+                            itemViewModel.refreshItems()
                         }
                     },
                     showEditDialog = showEditDialog,
                     showAddDialog = showAddDialog,
                     selectedTab = selectedTab
-                ) 
-            } 
+                )
+            }
         }
     }
 }
@@ -127,7 +134,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainContent(
     itemViewModel: ItemViewModel,
-    onPickImage: (Int) -> Unit,
+    onPickImage: (Int, (ItemCardDetail) -> Unit) -> Unit,
     showEditDialog: MutableState<Boolean>,
     showAddDialog: MutableState<Boolean>,
     selectedTab: MutableState<Int>
@@ -183,11 +190,16 @@ fun MainContent(
                 showEditDialog.value = false
                 itemCardDetailToEdit = null
             },
-            onAddImage = { onPickImage(itemCardDetailToEdit!!.id) },
-            onDeleteImage = { imageId -> 
+            onAddImage = {
+                onPickImage(itemCardDetailToEdit!!.id) { updatedItem ->
+                    itemCardDetailToEdit = updatedItem
+                }
+            },
+            onDeleteImage = { imageId ->
                 itemCardDetailToEdit?.let { item ->
                     val isCoverImage = item.coverImageId == imageId
                     itemViewModel.deleteImage(item.id, imageId, isCoverImage)
+                    itemViewModel.refreshItems()
                 }
             },
             onCategorySelected = { categoryId ->
@@ -225,11 +237,16 @@ fun MainContent(
                 itemViewModel.refreshItems()
                 showAddDialog.value = false
             },
-            onAddImage = { onPickImage(0) }, // 0 for new items
-            onDeleteImage = { imageId -> 
+            onAddImage = {
+                onPickImage(0) { updatedItem ->
+                    itemCardDetailToEdit = updatedItem
+                }
+            },
+            onDeleteImage = { imageId ->
                 itemCardDetailToEdit?.let { item ->
                     val isCoverImage = item.coverImageId == imageId
                     itemViewModel.deleteImage(item.id, imageId, isCoverImage)
+                    itemViewModel.refreshItems()
                 }
             },
             onCategorySelected = { categoryId ->
