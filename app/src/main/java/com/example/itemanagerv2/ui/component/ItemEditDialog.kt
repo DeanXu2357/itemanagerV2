@@ -42,11 +42,6 @@ fun ItemEditDialog(
         mutableStateOf(item.attributes.associate { it.attributeId to it.value })
     }
 
-    // Effect to update editedItem when item changes (e.g., after image operations)
-    LaunchedEffect(item) {
-        editedItem = item
-    }
-
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -95,33 +90,21 @@ fun ItemEditDialog(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
-            val handleDeleteImage: (Int) -> Unit = { imageId -> 
-                // If deleting cover image, clear coverImageId
-                if (imageId == editedItem.coverImageId) {
-                    editedItem = editedItem.copy(
-                        coverImageId = null,
-                        coverImage = null
-                    )
-                }
-                // Remove the image from editedItem's images list
-                editedItem = editedItem.copy(
-                    images = editedItem.images.filter { it.id != imageId }
-                )
-                onDeleteImage(imageId)
-            }
-
-            val handleSetCover: (Int) -> Unit = { imageId -> 
-                editedItem = editedItem.copy(
-                    coverImageId = imageId,
-                    coverImage = editedItem.images.find { it.id == imageId }
-                )
-            }
-
             MultiPreviewImageCarousel(
-                images = editedItem.images,
+                images = item.images,
                 onAddClick = onAddImage,
-                onDeleteClick = handleDeleteImage,
-                onSetCover = handleSetCover,
+                onDeleteClick = { imageId -> 
+                    if (imageId == editedItem.coverImageId) {
+                        editedItem = editedItem.copy(coverImageId = null, coverImage = null)
+                    }
+                    onDeleteImage(imageId)
+                },
+                onSetCover = { imageId ->
+                    editedItem = editedItem.copy(
+                        coverImageId = imageId,
+                        coverImage = item.images.find { it.id == imageId }
+                    )
+                },
                 selectedCoverImageId = editedItem.coverImageId
             )
 
