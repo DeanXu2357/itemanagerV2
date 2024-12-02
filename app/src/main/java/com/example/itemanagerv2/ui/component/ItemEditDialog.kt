@@ -42,6 +42,11 @@ fun ItemEditDialog(
         mutableStateOf(item.attributes.associate { it.attributeId to it.value })
     }
 
+    // Effect to update editedItem when item changes (e.g., after image operations)
+    LaunchedEffect(item) {
+        editedItem = item
+    }
+
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -98,6 +103,10 @@ fun ItemEditDialog(
                         coverImage = null
                     )
                 }
+                // Remove the image from editedItem's images list
+                editedItem = editedItem.copy(
+                    images = editedItem.images.filter { it.id != imageId }
+                )
                 onDeleteImage(imageId)
             }
 
