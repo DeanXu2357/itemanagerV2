@@ -100,9 +100,30 @@ fun ItemEditDialog(
                 images = editedItem.images,
                 onAddClick = onAddImage,
                 onDeleteClick = { imageId -> 
-                    if (imageId == editedItem.coverImageId) {
-                        editedItem = editedItem.copy(coverImageId = null, coverImage = null)
+                    val isCoverImage = imageId == editedItem.coverImageId
+                    val remainingImages = editedItem.images.filter { it.id != imageId }
+                    
+                    // If we're deleting the cover image and there are remaining images,
+                    // set the first remaining image as the new cover
+                    if (isCoverImage && remainingImages.isNotEmpty()) {
+                        val newCoverImage = remainingImages.first()
+                        editedItem = editedItem.copy(
+                            images = remainingImages,
+                            coverImageId = newCoverImage.id,
+                            coverImage = newCoverImage
+                        )
+                    } else if (isCoverImage) {
+                        // If we're deleting the cover image and there are no remaining images
+                        editedItem = editedItem.copy(
+                            images = remainingImages,
+                            coverImageId = null,
+                            coverImage = null
+                        )
+                    } else {
+                        // If we're not deleting the cover image
+                        editedItem = editedItem.copy(images = remainingImages)
                     }
+                    
                     onDeleteImage(imageId)
                 },
                 onSetCover = { imageId ->

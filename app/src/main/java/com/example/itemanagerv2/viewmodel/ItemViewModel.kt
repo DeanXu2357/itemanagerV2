@@ -239,40 +239,57 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
     fun deleteImage(itemId: Int, imageId: Int, isCoverImage: Boolean) {
         viewModelScope.launch {
             try {
-                // If this is the cover image, update the item to clear coverImageId
-                if (isCoverImage) {
-                    val item = _itemCardDetails.value.find { it.id == itemId }
-                    item?.let {
-                        updateItemCardDetail(
-                            it.copy(
-                                coverImageId = null,
-                                coverImage = null
-                            )
-                        )
-                    }
-                }
-                
                 // Delete the image file and database record
-                val image = _itemCardDetails.value
-                    .find { it.id == itemId }
-                    ?.images
-                    ?.find { it.id == imageId }
-                
-                image?.let {
-                    withContext(Dispatchers.IO) {
-                        // 使用 ImageManager 刪除實體文件
-                        imageManager.deleteImage(it.filePath)
-                        // 使用 Repository 刪除數據庫記錄
-                        itemRepository.deleteImage(it)
-                    }
-                }
-                
-                // Update the items list by removing the deleted image
                 val currentItem = _itemCardDetails.value.find { it.id == itemId }
                 currentItem?.let { item ->
-                    val updatedItem = item.copy(
-                        images = item.images.filter { it.id != imageId }
-                    )
+                    val imageToDelete = item.images.find { it.id == imageId }
+                    imageToDelete?.let {
+                        withContext(Dispatchers.IO) {
+                            imageManager.deleteImage(it.filePath)
+                            itemRepository.deleteImage(it)
+                        }
+                    }
+                    
+                    // Update the item with remaining images
+                    val remainingImages = item.images.filter { it.id != imageId }
+                    val updatedItem = if (isCoverImage && remainingImages.isNotEmpty()) {
+                        // If we deleted the cover image and there are remaining images,
+                        // set the first remaining image as the cover
+                        val newCoverImage = remainingImages.first()
+                        item.copy(
+                            images = remainingImages,
+                            coverImageId = newCoverImage.id,
+                            coverImage = newCoverImage
+                        )
+                    } else if (isCoverImage) {
+                        // If we deleted the cover image and there are no remaining images
+                        item.copy(
+                            images = remainingImages,
+                            coverImageId = null,
+                            coverImage = null
+                        )
+                    } else {
+                        // If we didn't delete the cover image
+                        item.copy(images = remainingImages)
+                    }
+
+                    // Update the database if we changed the cover image
+                    if (isCoverImage) {
+                        val updatedDbItem = Item(
+                            id = updatedItem.id,
+                            name = updatedItem.name,
+                            categoryId = updatedItem.categoryId,
+                            codeType = updatedItem.codeType,
+                            codeContent = updatedItem.codeContent,
+                            codeImageId = updatedItem.codeImageId,
+                            coverImageId = updatedItem.coverImageId,
+                            createdAt = updatedItem.createdAt,
+                            updatedAt = System.currentTimeMillis()
+                        )
+                        itemRepository.updateItem(updatedDbItem)
+                    }
+                    
+                    // Update the UI state
                     _itemCardDetails.value = _itemCardDetails.value.map { 
                         if (it.id == itemId) updatedItem else it 
                     }
