@@ -204,6 +204,9 @@ fun MainContent(
             },
             onCategorySelected = { categoryId ->
                 itemViewModel.loadCategoryAttributes(categoryId)
+            },
+            onSetCoverImage = { itemId, imageId ->
+                itemViewModel.updateItemCoverImage(itemId, imageId)
             }
         )
     }
@@ -251,6 +254,9 @@ fun MainContent(
             },
             onCategorySelected = { categoryId ->
                 itemViewModel.loadCategoryAttributes(categoryId)
+            },
+            onSetCoverImage = { itemId, imageId ->
+                itemViewModel.updateItemCoverImage(itemId, imageId)
             }
         )
     }

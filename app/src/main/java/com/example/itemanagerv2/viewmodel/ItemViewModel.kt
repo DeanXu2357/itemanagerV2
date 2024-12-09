@@ -284,6 +284,42 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
         }
     }
 
+    fun updateItemCoverImage(itemId: Int, imageId: Int) {
+        viewModelScope.launch {
+            try {
+                // Find the current item
+                val currentItem = _itemCardDetails.value.find { it.id == itemId }
+                currentItem?.let { item ->
+                    // Update the database immediately
+                    val updatedItem = Item(
+                        id = item.id,
+                        name = item.name,
+                        categoryId = item.categoryId,
+                        codeType = item.codeType,
+                        codeContent = item.codeContent,
+                        codeImageId = item.codeImageId,
+                        coverImageId = imageId,
+                        createdAt = item.createdAt,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                    itemRepository.updateItem(updatedItem)
+
+                    // Update the UI state
+                    val updatedItemCardDetail = item.copy(
+                        coverImageId = imageId,
+                        coverImage = item.images.find { it.id == imageId }
+                    )
+                    _itemCardDetails.value = _itemCardDetails.value.map { 
+                        if (it.id == itemId) updatedItemCardDetail else it 
+                    }
+                }
+            } catch (e: Exception) {
+                _error.value = "Error updating cover image: ${e.message}"
+                Log.e("ItemViewModel", "Error updating cover image", e)
+            }
+        }
+    }
+
     fun ensureCategoriesLoaded() {
         if (!hasLoadedCategories) {
             viewModelScope.launch {
@@ -411,11 +447,11 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
         }
     }
 
-    fun addCategoryAttribute(attribute: CategoryAttribute) {
+    fun addCategoryAttribute(categoryAttribute: CategoryAttribute) {
         viewModelScope.launch {
             try {
-                itemRepository.insertCategoryAttribute(attribute)
-                loadCategoryAttributes(attribute.categoryId)
+                itemRepository.insertCategoryAttribute(categoryAttribute)
+                loadCategoryAttributes(categoryAttribute.categoryId)
             } catch (e: Exception) {
                 _error.value = "Error adding category attribute: ${e.message}"
                 Log.e("ItemViewModel", "Error adding category attribute", e)

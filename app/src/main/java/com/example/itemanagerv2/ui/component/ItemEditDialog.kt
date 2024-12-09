@@ -30,7 +30,8 @@ fun ItemEditDialog(
     onSave: (ItemCardDetail) -> Unit,
     onAddImage: () -> Unit,
     onDeleteImage: (Int) -> Unit,
-    onCategorySelected: (Int) -> Unit = {}
+    onCategorySelected: (Int) -> Unit = {},
+    onSetCoverImage: (Int, Int) -> Unit
 ) {
     var editedItem by remember { mutableStateOf(item) }
     var isDetailExpanded by remember { mutableStateOf(true) }
@@ -105,10 +106,13 @@ fun ItemEditDialog(
                     onDeleteImage(imageId)
                 },
                 onSetCover = { imageId ->
+                    // Update local state
                     editedItem = editedItem.copy(
                         coverImageId = imageId,
                         coverImage = editedItem.images.find { it.id == imageId }
                     )
+                    // Update database immediately
+                    onSetCoverImage(editedItem.id, imageId)
                 },
                 selectedCoverImageId = editedItem.coverImageId
             )
@@ -379,7 +383,8 @@ fun ItemEditDialogPreview() {
             onSave = {},
             onAddImage = {},
             onDeleteImage = {},
-            onCategorySelected = {}
+            onCategorySelected = {},
+            onSetCoverImage = { _, _ -> }
         )
     }
 }
