@@ -214,11 +214,12 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
                 // Find the current item and update its images list
                 val currentItem = _itemCardDetails.value.find { it.id == itemId }
                 currentItem?.let { item ->
+                    // Only set as cover image if there are no other images
+                    val shouldSetAsCover = item.images.isEmpty()
                     val updatedItem = item.copy(
                         images = item.images + savedImage,
-                        // If this is the first image, set it as cover image
-                        coverImageId = if (item.coverImageId == null) savedImage.id else item.coverImageId,
-                        coverImage = if (item.coverImageId == null) savedImage else item.coverImage
+                        coverImageId = if (shouldSetAsCover) savedImage.id else item.coverImageId,
+                        coverImage = if (shouldSetAsCover) savedImage else item.coverImage
                     )
                     
                     // Update the items list with the modified item
