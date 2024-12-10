@@ -32,12 +32,11 @@ fun MainPage(
     onAddImage: (Int, (ItemCardDetail) -> Unit) -> Unit,
     onDeleteImage: (Int, Int) -> Unit,
     onCategorySelected: (Int) -> Unit,
-    onSetCoverImage: (Int, Int) -> Unit
+    onSetCoverImage: (Int, Int) -> Unit,
+    onItemSelect: (ItemCardDetail) -> Unit
 ) {
     val gridState = rememberLazyGridState()
     var isFabExpanded by remember { mutableStateOf(false) }
-    var selectedItem by remember { mutableStateOf<ItemCardDetail?>(null) }
-    var showEditDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -68,52 +67,10 @@ fun MainPage(
                 items(cardDetails) { item ->
                     ItemCard(
                         cardDetail = item,
-                        onEdit = { selectedItem = item },
+                        onEdit = { onItemSelect(item) },
                         onDelete = { onDeleteCard(item) }
                     )
                 }
-            }
-
-            // View Dialog
-            selectedItem?.let { item ->
-                if (!showEditDialog) {
-                    ItemViewDialog(
-                        item = item,
-                        categoryAttributes = categoryAttributes,
-                        onDismiss = { selectedItem = null },
-                        onEdit = { showEditDialog = true }
-                    )
-                }
-            }
-
-            // Edit Dialog
-            if (showEditDialog && selectedItem != null) {
-                ItemEditDialog(
-                    item = selectedItem!!,
-                    categories = categories,
-                    categoryAttributes = categoryAttributes,
-                    onDismiss = {
-                        showEditDialog = false
-                        selectedItem = null
-                    },
-                    onSave = { editedItem ->
-                        onSaveEdit(editedItem)
-                        showEditDialog = false
-                        selectedItem = null
-                    },
-                    onAddImage = {
-                        onAddImage(selectedItem!!.id) { updatedItem ->
-                            selectedItem = updatedItem
-                        }
-                    },
-                    onDeleteImage = { imageId -> 
-                        onDeleteImage(selectedItem!!.id, imageId)
-                    },
-                    onCategorySelected = onCategorySelected,
-                    onSetCoverImage = { _, imageId -> 
-                        onSetCoverImage(selectedItem!!.id, imageId)
-                    }
-                )
             }
         }
     }
@@ -209,7 +166,8 @@ fun MainPagePreview() {
             onAddImage = { _, _ -> },
             onDeleteImage = { _, _ -> },
             onCategorySelected = { },
-            onSetCoverImage = { _, _ -> }
+            onSetCoverImage = { _, _ -> },
+            onItemSelect = { }
         )
     }
 }

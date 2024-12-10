@@ -32,6 +32,7 @@ import android.content.pm.PackageManager
 import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
 import com.example.itemanagerv2.ui.component.ItemEditDialog
+import com.example.itemanagerv2.ui.component.ItemViewDialog
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -41,6 +42,9 @@ class MainActivity : ComponentActivity() {
     private var showAddDialog = mutableStateOf(false)
     private var selectedTab = mutableStateOf(0)
     private var onImageAddedCallback: ((ItemCardDetail) -> Unit)? = null
+    private var selectedItem = mutableStateOf<ItemCardDetail?>(null)
+    private var showEditDialog = mutableStateOf(false)
+    private var isEditFromView = mutableStateOf(false)
 
     private val imagePickerLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -92,9 +96,26 @@ class MainActivity : ComponentActivity() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 when {
-                    showAddDialog.value -> showAddDialog.value = false
-                    selectedTab.value == 1 -> selectedTab.value = 0
-                    else -> isEnabled = false
+                    showAddDialog.value -> {
+                        showAddDialog.value = false
+                    }
+                    showEditDialog.value -> {
+                        showEditDialog.value = false
+                        if (!isEditFromView.value) {
+                            selectedItem.value = null
+                        }
+                        isEditFromView.value = false
+                    }
+                    selectedItem.value != null -> {
+                        selectedItem.value = null
+                    }
+                    selectedTab.value == 1 -> {
+                        selectedTab.value = 0
+                    }
+                    selectedTab.value == 0 -> {
+                        // Only finish() when on main screen with no dialogs or selected items
+                        finish()
+                    }
                 }
             }
         })
@@ -114,7 +135,10 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     showAddDialog = showAddDialog,
-                    selectedTab = selectedTab
+                    selectedTab = selectedTab,
+                    selectedItem = selectedItem,
+                    showEditDialog = showEditDialog,
+                    isEditFromView = isEditFromView
                 )
             }
         }
@@ -126,7 +150,10 @@ fun MainContent(
     itemViewModel: ItemViewModel,
     onPickImage: (Int, (ItemCardDetail) -> Unit) -> Unit,
     showAddDialog: MutableState<Boolean>,
-    selectedTab: MutableState<Int>
+    selectedTab: MutableState<Int>,
+    selectedItem: MutableState<ItemCardDetail?>,
+    showEditDialog: MutableState<Boolean>,
+    isEditFromView: MutableState<Boolean>
 ) {
     val cardDetails by itemViewModel.itemCardDetails.collectAsStateWithLifecycle()
     val isLoading by itemViewModel.isLoading.collectAsStateWithLifecycle(initialValue = false)
@@ -167,9 +194,67 @@ fun MainContent(
         onSetCoverImage = { itemId, imageId ->
             itemViewModel.updateItemCoverImage(itemId, imageId)
         },
-        selectedTab = selectedTab
+        selectedTab = selectedTab,
+        onItemSelect = { item -> selectedItem.value = item }
     )
 
+    // View Dialog
+    selectedItem.value?.let { item ->
+        if (!showEditDialog.value) {
+            ItemViewDialog(
+                item = item,
+                categoryAttributes = categoryAttributes,
+                onDismiss = { selectedItem.value = null },
+                onEdit = { 
+                    isEditFromView.value = true
+                    showEditDialog.value = true 
+                }
+            )
+        }
+    }
+
+    // Edit Dialog
+    if (showEditDialog.value && selectedItem.value != null) {
+        ItemEditDialog(
+            item = selectedItem.value!!,
+            categories = categories,
+            categoryAttributes = categoryAttributes,
+            onDismiss = {
+                showEditDialog.value = false
+                if (!isEditFromView.value) {
+                    selectedItem.value = null
+                }
+                isEditFromView.value = false
+            },
+            onSave = { editedItem ->
+                itemViewModel.updateItemCardDetail(editedItem)
+                itemViewModel.refreshItems()
+                showEditDialog.value = false
+                if (!isEditFromView.value) {
+                    selectedItem.value = null
+                }
+                isEditFromView.value = false
+            },
+            onAddImage = {
+                onPickImage(selectedItem.value!!.id) { updatedItem ->
+                    selectedItem.value = updatedItem
+                }
+            },
+            onDeleteImage = { imageId -> 
+                val isCoverImage = selectedItem.value!!.coverImageId == imageId
+                itemViewModel.deleteImage(selectedItem.value!!.id, imageId, isCoverImage)
+                itemViewModel.refreshItems()
+            },
+            onCategorySelected = { categoryId ->
+                itemViewModel.loadCategoryAttributes(categoryId)
+            },
+            onSetCoverImage = { _, imageId -> 
+                itemViewModel.updateItemCoverImage(selectedItem.value!!.id, imageId)
+            }
+        )
+    }
+
+    // Add Dialog
     if (showAddDialog.value) {
         itemViewModel.ensureCategoriesLoaded()
         val emptyItem = ItemCardDetail(
@@ -233,7 +318,8 @@ fun AppScaffold(
     onAddImage: (Int, (ItemCardDetail) -> Unit) -> Unit,
     onDeleteImage: (Int, Int, Boolean) -> Unit,
     onSetCoverImage: (Int, Int) -> Unit,
-    selectedTab: MutableState<Int>
+    selectedTab: MutableState<Int>,
+    onItemSelect: (ItemCardDetail) -> Unit
 ) {
     Scaffold(
         bottomBar = {
@@ -274,7 +360,8 @@ fun AppScaffold(
                             onDeleteImage(itemId, imageId, isCoverImage)
                         },
                         onCategorySelected = onLoadCategoryAttributes,
-                        onSetCoverImage = onSetCoverImage
+                        onSetCoverImage = onSetCoverImage,
+                        onItemSelect = onItemSelect
                     )
 
                 1 ->
