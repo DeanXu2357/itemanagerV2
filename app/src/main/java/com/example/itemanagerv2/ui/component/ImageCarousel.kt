@@ -27,6 +27,87 @@ import kotlin.math.absoluteValue
 import kotlinx.coroutines.launch
 
 @Composable
+fun ImageCarousel(
+    images: List<Image>,
+    selectedCoverImageId: Int?,
+    modifier: Modifier = Modifier
+) {
+    if (images.isEmpty()) return
+
+    val pagerState = rememberPagerState(pageCount = { images.size })
+    val coroutineScope = rememberCoroutineScope()
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+        ) { page ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+            ) {
+                val pageOffset = (page - pagerState.currentPage).toFloat()
+                val scale = animateFloatAsState(
+                    targetValue = if (pageOffset == 0f) 1f else 0.8f,
+                    label = "scale"
+                )
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            scaleX = scale.value
+                            scaleY = scale.value
+                            alpha = 1f - pageOffset.absoluteValue.coerceIn(0f, 1f)
+                        },
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    AsyncImage(
+                        model = images[page].filePath,
+                        contentDescription = "Image ${page + 1}",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+        }
+
+        // Carousel indicator
+        if (images.size > 1) {
+            Row(
+                Modifier
+                    .height(50.dp)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                repeat(pagerState.pageCount) { iteration ->
+                    val color = if (pagerState.currentPage == iteration) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .padding(2.dp)
+                            .clip(CircleShape)
+                            .background(color)
+                            .size(8.dp)
+                            .clickable {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(iteration)
+                                }
+                            }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun MultiPreviewImageCarousel(
     images: List<Image>,
     onAddClick: () -> Unit,
@@ -36,8 +117,7 @@ fun MultiPreviewImageCarousel(
 ) {
     // Local state for preview display
     var displayedImages by remember(images) { mutableStateOf(images) }
-    var displayedCoverImageId by
-    remember(selectedCoverImageId) { mutableStateOf(selectedCoverImageId) }
+    var displayedCoverImageId by remember(selectedCoverImageId) { mutableStateOf(selectedCoverImageId) }
 
     val pagerState = rememberPagerState(pageCount = { displayedImages.size + 1 })
     val coroutineScope = rememberCoroutineScope()
@@ -56,15 +136,13 @@ fun MultiPreviewImageCarousel(
             ) {
                 if (page < displayedImages.size) {
                     val pageOffset = (page - pagerState.currentPage).toFloat()
-                    val scale =
-                        animateFloatAsState(
-                            targetValue = if (pageOffset == 0f) 1f else 0.8f,
-                            label = "scale"
-                        )
+                    val scale = animateFloatAsState(
+                        targetValue = if (pageOffset == 0f) 1f else 0.8f,
+                        label = "scale"
+                    )
 
                     Card(
-                        modifier =
-                        Modifier
+                        modifier = Modifier
                             .fillMaxSize()
                             .graphicsLayer {
                                 scaleX = scale.value
@@ -95,21 +173,15 @@ fun MultiPreviewImageCarousel(
                                         displayedCoverImageId = imageId
                                         onSetCover(imageId)
                                     },
-                                    modifier =
-                                    Modifier.background(
-                                        color =
-                                        MaterialTheme.colorScheme.surface
-                                            .copy(alpha = 0.7f),
+                                    modifier = Modifier.background(
+                                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
                                         shape = CircleShape
                                     )
                                 ) {
                                     Icon(
                                         Icons.Default.Image,
                                         contentDescription = "Set as cover",
-                                        tint =
-                                        if (displayedImages[page].id ==
-                                            displayedCoverImageId
-                                        )
+                                        tint = if (displayedImages[page].id == displayedCoverImageId)
                                             MaterialTheme.colorScheme.primary
                                         else MaterialTheme.colorScheme.onSurface
                                     )
@@ -120,19 +192,15 @@ fun MultiPreviewImageCarousel(
                                     onClick = {
                                         val imageId = displayedImages[page].id
                                         // Update preview display first
-                                        displayedImages =
-                                            displayedImages.filter { it.id != imageId }
+                                        displayedImages = displayedImages.filter { it.id != imageId }
                                         if (imageId == displayedCoverImageId) {
                                             displayedCoverImageId = null
                                         }
                                         // Then notify parent
                                         onDeleteClick(imageId)
                                     },
-                                    modifier =
-                                    Modifier.background(
-                                        color =
-                                        MaterialTheme.colorScheme.surface
-                                            .copy(alpha = 0.7f),
+                                    modifier = Modifier.background(
+                                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
                                         shape = CircleShape
                                     )
                                 ) {
@@ -169,18 +237,17 @@ fun MultiPreviewImageCarousel(
         Row(
             Modifier
                 .height(50.dp)
-                .fillMaxWidth(), horizontalArrangement = Arrangement.Center
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
         ) {
             repeat(pagerState.pageCount) { iteration ->
-                val color =
-                    if (pagerState.currentPage == iteration) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                    }
+                val color = if (pagerState.currentPage == iteration) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                }
                 Box(
-                    modifier =
-                    Modifier
+                    modifier = Modifier
                         .padding(2.dp)
                         .clip(CircleShape)
                         .background(color)
@@ -198,57 +265,62 @@ fun MultiPreviewImageCarousel(
 
 @Preview(showBackground = true)
 @Composable
+fun ImageCarouselPreview() {
+    MaterialTheme {
+        val currentDate = Date()
+        val sampleImages = listOf(
+            Image(
+                id = 1,
+                filePath = "https://example.com/image1.jpg",
+                itemId = 1,
+                order = 0,
+                content = "Sample image 1",
+                createdAt = currentDate,
+                updatedAt = currentDate
+            ),
+            Image(
+                id = 2,
+                filePath = "https://example.com/image2.jpg",
+                itemId = 1,
+                order = 1,
+                content = "Sample image 2",
+                createdAt = currentDate,
+                updatedAt = currentDate
+            )
+        )
+
+        ImageCarousel(
+            images = sampleImages,
+            selectedCoverImageId = sampleImages.firstOrNull()?.id
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
 fun MultiPreviewImageCarouselPreview() {
     MaterialTheme {
         val currentDate = Date()
-        val sampleImages =
-            listOf(
-                Image(
-                    id = 1,
-                    filePath = "https://example.com/image1.jpg",
-                    itemId = 1,
-                    order = 0,
-                    content = "Sample image 1",
-                    createdAt = currentDate,
-                    updatedAt = currentDate
-                ),
-                Image(
-                    id = 2,
-                    filePath = "https://example.com/image2.jpg",
-                    itemId = 1,
-                    order = 1,
-                    content = "Sample image 2",
-                    createdAt = currentDate,
-                    updatedAt = currentDate
-                ),
-                Image(
-                    id = 3,
-                    filePath = "https://example.com/image3.jpg",
-                    itemId = 1,
-                    order = 2,
-                    content = "Sample image 3",
-                    createdAt = currentDate,
-                    updatedAt = currentDate
-                ),
-                Image(
-                    id = 4,
-                    filePath = "https://example.com/image4.jpg",
-                    itemId = 1,
-                    order = 3,
-                    content = "Sample image 4",
-                    createdAt = currentDate,
-                    updatedAt = currentDate
-                ),
-                Image(
-                    id = 5,
-                    filePath = "https://example.com/image5.jpg",
-                    itemId = 1,
-                    order = 4,
-                    content = "Sample image 5",
-                    createdAt = currentDate,
-                    updatedAt = currentDate
-                )
+        val sampleImages = listOf(
+            Image(
+                id = 1,
+                filePath = "https://example.com/image1.jpg",
+                itemId = 1,
+                order = 0,
+                content = "Sample image 1",
+                createdAt = currentDate,
+                updatedAt = currentDate
+            ),
+            Image(
+                id = 2,
+                filePath = "https://example.com/image2.jpg",
+                itemId = 1,
+                order = 1,
+                content = "Sample image 2",
+                createdAt = currentDate,
+                updatedAt = currentDate
             )
+        )
 
         MultiPreviewImageCarousel(
             images = sampleImages,

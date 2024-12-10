@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.itemanagerv2.data.local.entity.CategoryAttribute
 import com.example.itemanagerv2.data.local.entity.Image
 import com.example.itemanagerv2.data.local.entity.ItemAttributeValue
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
@@ -22,39 +23,97 @@ import java.util.Date
 @Composable
 fun MainPage(
     cardDetails: List<ItemCardDetail>,
-    onEditCard: (ItemCardDetail) -> Unit,
+    categories: List<ItemCategoryArg>,
+    categoryAttributes: List<CategoryAttribute>,
+    onSaveEdit: (ItemCardDetail) -> Unit,
     onManualAdd: () -> Unit,
     onScanAdd: () -> Unit,
-    onDeleteCard: (ItemCardDetail) -> Unit
+    onDeleteCard: (ItemCardDetail) -> Unit,
+    onAddImage: (Int, (ItemCardDetail) -> Unit) -> Unit,
+    onDeleteImage: (Int, Int) -> Unit,
+    onCategorySelected: (Int) -> Unit,
+    onSetCoverImage: (Int, Int) -> Unit
 ) {
     val gridState = rememberLazyGridState()
     var isFabExpanded by remember { mutableStateOf(false) }
+    var selectedItem by remember { mutableStateOf<ItemCardDetail?>(null) }
+    var showEditDialog by remember { mutableStateOf(false) }
 
-    Scaffold(topBar = {
-        CustomTopAppBar(title = "Asset Inventory", onSearchClick = { /* TODO: 實現搜索功能 */ })
-    }, floatingActionButton = {
-        InsertFAB(
-            isExpanded = isFabExpanded,
-            onExpandedChange = { isFabExpanded = it },
-            onManualAdd = onManualAdd,
-            onScanAdd = onScanAdd,
-        )
-    }) { innerPadding ->
+    Scaffold(
+        topBar = {
+            CustomTopAppBar(
+                title = "Asset Inventory",
+                onSearchClick = { /* TODO: 實現搜索功能 */ }
+            )
+        },
+        floatingActionButton = {
+            InsertFAB(
+                isExpanded = isFabExpanded,
+                onExpandedChange = { isFabExpanded = it },
+                onManualAdd = onManualAdd,
+                onScanAdd = onScanAdd,
+            )
+        }
+    ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
             LazyVerticalGrid(
-                columns = GridCells.Fixed(2), state = gridState, modifier = Modifier.fillMaxSize()
+                columns = GridCells.Fixed(2),
+                state = gridState,
+                modifier = Modifier.fillMaxSize()
             ) {
                 items(cardDetails) { item ->
                     ItemCard(
                         cardDetail = item,
-                        onEdit = { onEditCard(item) },
+                        onEdit = { selectedItem = item },
                         onDelete = { onDeleteCard(item) }
                     )
                 }
+            }
+
+            // View Dialog
+            selectedItem?.let { item ->
+                if (!showEditDialog) {
+                    ItemViewDialog(
+                        item = item,
+                        categoryAttributes = categoryAttributes,
+                        onDismiss = { selectedItem = null },
+                        onEdit = { showEditDialog = true }
+                    )
+                }
+            }
+
+            // Edit Dialog
+            if (showEditDialog && selectedItem != null) {
+                ItemEditDialog(
+                    item = selectedItem!!,
+                    categories = categories,
+                    categoryAttributes = categoryAttributes,
+                    onDismiss = {
+                        showEditDialog = false
+                        selectedItem = null
+                    },
+                    onSave = { editedItem ->
+                        onSaveEdit(editedItem)
+                        showEditDialog = false
+                        selectedItem = null
+                    },
+                    onAddImage = {
+                        onAddImage(selectedItem!!.id) { updatedItem ->
+                            selectedItem = updatedItem
+                        }
+                    },
+                    onDeleteImage = { imageId -> 
+                        onDeleteImage(selectedItem!!.id, imageId)
+                    },
+                    onCategorySelected = onCategorySelected,
+                    onSetCoverImage = { _, imageId -> 
+                        onSetCoverImage(selectedItem!!.id, imageId)
+                    }
+                )
             }
         }
     }
@@ -116,48 +175,41 @@ fun MainPagePreview() {
             codeImage = imageDummy,
             images = listOf(imageDummy),
             attributes = listOf(attributeDummy),
-        ),
-        ItemCardDetail(
-            id = 3,
-            name = "Sample Item 3",
-            coverImage = null,
+        )
+    )
+
+    val previewCategories = listOf(
+        ItemCategoryArg(1, "Electronics"),
+        ItemCategoryArg(2, "Furniture")
+    )
+
+    val previewAttributes = listOf(
+        CategoryAttribute(
+            id = 1,
             categoryId = 1,
-            codeType = "QR",
-            codeContent = "Sample content 3",
-            codeImageId = 0,
-            coverImageId = 0,
-            createdAt = 0,
-            updatedAt = 0,
-            category = itemCategoryDummy,
-            codeImage = imageDummy,
-            images = listOf(imageDummy),
-            attributes = listOf(attributeDummy),
-        ),
-        ItemCardDetail(
-            id = 4,
-            name = "Sample Item 4",
-            coverImage = null,
-            categoryId = 2,
-            codeType = "Barcode",
-            codeContent = "Sample content 4",
-            codeImageId = 0,
-            coverImageId = 0,
-            createdAt = 0,
-            updatedAt = 0,
-            category = itemCategoryDummy,
-            codeImage = imageDummy,
-            images = listOf(imageDummy),
-            attributes = listOf(attributeDummy),
+            name = "Brand",
+            isRequired = true,
+            isEditable = true,
+            valueType = CategoryAttribute.TYPE_STRING,
+            defaultValue = null,
+            createdAt = Date(),
+            updatedAt = Date()
         )
     )
 
     BaseTheme {
         MainPage(
             cardDetails = previewCardDetails,
-            onEditCard = { },
+            categories = previewCategories,
+            categoryAttributes = previewAttributes,
+            onSaveEdit = { },
             onManualAdd = { },
             onScanAdd = { },
-            onDeleteCard = { }
+            onDeleteCard = { },
+            onAddImage = { _, _ -> },
+            onDeleteImage = { _, _ -> },
+            onCategorySelected = { },
+            onSetCoverImage = { _, _ -> }
         )
     }
 }

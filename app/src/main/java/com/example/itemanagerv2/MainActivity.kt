@@ -23,7 +23,6 @@ import com.example.itemanagerv2.data.local.entity.CategoryAttribute
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
 import com.example.itemanagerv2.data.local.model.ItemCategoryArg
 import com.example.itemanagerv2.ui.component.CategoryListPage
-import com.example.itemanagerv2.ui.component.ItemEditDialog
 import com.example.itemanagerv2.ui.component.MainPage
 import com.example.itemanagerv2.ui.theme.BaseTheme
 import com.example.itemanagerv2.viewmodel.ItemViewModel
@@ -32,13 +31,13 @@ import android.graphics.BitmapFactory
 import android.content.pm.PackageManager
 import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
+import com.example.itemanagerv2.ui.component.ItemEditDialog
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val itemViewModel: ItemViewModel by viewModels()
     private var currentEditingItemId: Int = 0
     private var pendingImagePick: Boolean = false
-    private var showEditDialog = mutableStateOf(false)
     private var showAddDialog = mutableStateOf(false)
     private var selectedTab = mutableStateOf(0)
     private var onImageAddedCallback: ((ItemCardDetail) -> Unit)? = null
@@ -47,7 +46,6 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let { selectedUri ->
-            // Convert URI to Bitmap
             contentResolver.openInputStream(selectedUri)?.use { inputStream ->
                 val bitmap = BitmapFactory.decodeStream(inputStream)
                 itemViewModel.addImageToItem(currentEditingItemId, bitmap) { updatedItem ->
@@ -80,11 +78,9 @@ class MainActivity : ComponentActivity() {
                 this,
                 permission
             ) == PackageManager.PERMISSION_GRANTED -> {
-                // Permission is already granted, proceed with the operation
                 onPermissionGranted()
             }
             else -> {
-                // Request the permission
                 requestPermissionLauncher.launch(permission)
             }
         }
@@ -93,16 +89,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Handle back press with unified logic
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 when {
-                    // If dialog is showing, close it first
-                    showEditDialog.value -> showEditDialog.value = false
                     showAddDialog.value -> showAddDialog.value = false
-                    // If on CategoryListPage, return to MainPage
                     selectedTab.value == 1 -> selectedTab.value = 0
-                    // If on MainPage, allow app exit
                     else -> isEnabled = false
                 }
             }
@@ -122,7 +113,6 @@ class MainActivity : ComponentActivity() {
                             itemViewModel.refreshItems()
                         }
                     },
-                    showEditDialog = showEditDialog,
                     showAddDialog = showAddDialog,
                     selectedTab = selectedTab
                 )
@@ -135,7 +125,6 @@ class MainActivity : ComponentActivity() {
 fun MainContent(
     itemViewModel: ItemViewModel,
     onPickImage: (Int, (ItemCardDetail) -> Unit) -> Unit,
-    showEditDialog: MutableState<Boolean>,
     showAddDialog: MutableState<Boolean>,
     selectedTab: MutableState<Int>
 ) {
@@ -143,7 +132,6 @@ fun MainContent(
     val isLoading by itemViewModel.isLoading.collectAsStateWithLifecycle(initialValue = false)
     val categories by itemViewModel.categories.collectAsStateWithLifecycle()
     val categoryAttributes by itemViewModel.categoryAttributes.collectAsStateWithLifecycle()
-    var itemCardDetailToEdit by remember { mutableStateOf<ItemCardDetail?>(null) }
 
     val onAddAttribute = { attribute: CategoryAttribute ->
         itemViewModel.addCategoryAttribute(attribute)
@@ -153,11 +141,9 @@ fun MainContent(
         cardDetails = cardDetails,
         categories = categories,
         categoryAttributes = categoryAttributes,
-        onEditCard = { item ->
-            itemCardDetailToEdit = item
-            showEditDialog.value = true
-            // Load attributes for the item's category
-            itemViewModel.loadCategoryAttributes(item.categoryId)
+        onSaveEdit = { itemCardDetail ->
+            itemViewModel.updateItemCardDetail(itemCardDetail)
+            itemViewModel.refreshItems()
         },
         onManualAdd = { showAddDialog.value = true },
         onScanAdd = { /* TODO: */ },
@@ -171,65 +157,37 @@ fun MainContent(
             itemViewModel.deleteCategoryAttribute(attributeId)
         },
         onAddAttribute = onAddAttribute,
+        onAddImage = { itemId, onImageAdded ->
+            onPickImage(itemId, onImageAdded)
+        },
+        onDeleteImage = { itemId, imageId, isCoverImage ->
+            itemViewModel.deleteImage(itemId, imageId, isCoverImage)
+            itemViewModel.refreshItems()
+        },
+        onSetCoverImage = { itemId, imageId ->
+            itemViewModel.updateItemCoverImage(itemId, imageId)
+        },
         selectedTab = selectedTab
     )
 
-    if (showEditDialog.value && itemCardDetailToEdit != null) {
-        itemViewModel.ensureCategoriesLoaded()
-        ItemEditDialog(
-            item = itemCardDetailToEdit!!,
-            categories = categories,
-            categoryAttributes = categoryAttributes,
-            onDismiss = {
-                showEditDialog.value = false
-                itemCardDetailToEdit = null
-            },
-            onSave = { itemCardDetail ->
-                itemViewModel.updateItemCardDetail(itemCardDetail)
-                itemViewModel.refreshItems()
-                showEditDialog.value = false
-                itemCardDetailToEdit = null
-            },
-            onAddImage = {
-                onPickImage(itemCardDetailToEdit!!.id) { updatedItem ->
-                    itemCardDetailToEdit = updatedItem
-                }
-            },
-            onDeleteImage = { imageId ->
-                itemCardDetailToEdit?.let { item ->
-                    val isCoverImage = item.coverImageId == imageId
-                    itemViewModel.deleteImage(item.id, imageId, isCoverImage)
-                    itemViewModel.refreshItems()
-                }
-            },
-            onCategorySelected = { categoryId ->
-                itemViewModel.loadCategoryAttributes(categoryId)
-            },
-            onSetCoverImage = { itemId, imageId ->
-                itemViewModel.updateItemCoverImage(itemId, imageId)
-            }
-        )
-    }
-
     if (showAddDialog.value) {
         itemViewModel.ensureCategoriesLoaded()
-        val emptyItem =
-            ItemCardDetail(
-                id = 0,
-                name = "",
-                categoryId = 0,
-                codeType = null,
-                codeContent = null,
-                codeImageId = null,
-                coverImageId = null,
-                createdAt = System.currentTimeMillis(),
-                updatedAt = System.currentTimeMillis(),
-                category = null,
-                codeImage = null,
-                coverImage = null,
-                images = emptyList(),
-                attributes = emptyList()
-            )
+        val emptyItem = ItemCardDetail(
+            id = 0,
+            name = "",
+            categoryId = 0,
+            codeType = null,
+            codeContent = null,
+            codeImageId = null,
+            coverImageId = null,
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis(),
+            category = null,
+            codeImage = null,
+            coverImage = null,
+            images = emptyList(),
+            attributes = emptyList()
+        )
         ItemEditDialog(
             item = emptyItem,
             categories = categories,
@@ -242,15 +200,11 @@ fun MainContent(
             },
             onAddImage = {
                 onPickImage(0) { updatedItem ->
-                    itemCardDetailToEdit = updatedItem
+                    // No need to update state since this is a new item
                 }
             },
             onDeleteImage = { imageId ->
-                itemCardDetailToEdit?.let { item ->
-                    val isCoverImage = item.coverImageId == imageId
-                    itemViewModel.deleteImage(item.id, imageId, isCoverImage)
-                    itemViewModel.refreshItems()
-                }
+                // No need to handle delete for new item
             },
             onCategorySelected = { categoryId ->
                 itemViewModel.loadCategoryAttributes(categoryId)
@@ -267,7 +221,7 @@ fun AppScaffold(
     cardDetails: List<ItemCardDetail>,
     categories: List<ItemCategoryArg>,
     categoryAttributes: List<CategoryAttribute>,
-    onEditCard: (ItemCardDetail) -> Unit,
+    onSaveEdit: (ItemCardDetail) -> Unit,
     onManualAdd: () -> Unit,
     onScanAdd: () -> Unit,
     onDeleteCard: (ItemCardDetail) -> Unit,
@@ -276,6 +230,9 @@ fun AppScaffold(
     onLoadCategoryAttributes: (Int) -> Unit,
     onDeleteAttribute: (Int) -> Unit,
     onAddAttribute: (CategoryAttribute) -> Unit,
+    onAddImage: (Int, (ItemCardDetail) -> Unit) -> Unit,
+    onDeleteImage: (Int, Int, Boolean) -> Unit,
+    onSetCoverImage: (Int, Int) -> Unit,
     selectedTab: MutableState<Int>
 ) {
     Scaffold(
@@ -305,10 +262,19 @@ fun AppScaffold(
                 0 ->
                     MainPage(
                         cardDetails = cardDetails,
-                        onEditCard = onEditCard,
+                        categories = categories,
+                        categoryAttributes = categoryAttributes,
+                        onSaveEdit = onSaveEdit,
                         onManualAdd = onManualAdd,
                         onScanAdd = onScanAdd,
-                        onDeleteCard = onDeleteCard
+                        onDeleteCard = onDeleteCard,
+                        onAddImage = onAddImage,
+                        onDeleteImage = { itemId, imageId -> 
+                            val isCoverImage = cardDetails.find { it.id == itemId }?.coverImageId == imageId
+                            onDeleteImage(itemId, imageId, isCoverImage)
+                        },
+                        onCategorySelected = onLoadCategoryAttributes,
+                        onSetCoverImage = onSetCoverImage
                     )
 
                 1 ->
