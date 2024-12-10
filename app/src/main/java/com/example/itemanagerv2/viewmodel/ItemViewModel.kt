@@ -379,6 +379,8 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
                 _deleteStatus.value = DeleteStatus.Loading
                 itemRepository.deleteItemWithRelations(itemCardDetail.id)
                 _deleteStatus.value = DeleteStatus.Success
+
+                _itemCardDetails.value = _itemCardDetails.value.filter { it.id != itemCardDetail.id }
             } catch (e: Exception) {
                 Log.e("ItemViewModel", "Error deleting item", e)
                 _deleteStatus.value = DeleteStatus.Error(e.message ?: "Unknown error")
