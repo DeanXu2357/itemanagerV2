@@ -4,6 +4,7 @@ import android.Manifest
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,6 +20,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import com.example.itemanagerv2.data.local.entity.CategoryAttribute
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
 import com.example.itemanagerv2.data.local.model.ItemCategoryArg
@@ -45,6 +48,7 @@ class MainActivity : ComponentActivity() {
     private var selectedItem = mutableStateOf<ItemCardDetail?>(null)
     private var showEditDialog = mutableStateOf(false)
     private var isEditFromView = mutableStateOf(false)
+    private var forceRecompose = mutableStateOf(0)
 
     private val imagePickerLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -90,6 +94,29 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        lifecycleScope.launch {
+            try {
+                itemViewModel.refreshItems()
+                
+                // If we're on the categories tab, also refresh the category attributes
+                if (selectedTab.value == 1) {
+                    val currentCategory = itemViewModel.categories.value.firstOrNull()
+                    currentCategory?.let { category ->
+                        itemViewModel.loadCategoryAttributes(category.id)
+                    }
+                }
+                
+                // Force a recomposition
+                forceRecompose.value = forceRecompose.value + 1
+                Log.d("MainActivity", "Data refresh complete")
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Error refreshing data", e)
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -122,6 +149,9 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             BaseTheme {
+                // Use forceRecompose to trigger recomposition
+                forceRecompose.value
+                
                 MainContent(
                     itemViewModel = itemViewModel,
                     onPickImage = { itemId, onImageAdded ->
@@ -159,6 +189,10 @@ fun MainContent(
     val isLoading by itemViewModel.isLoading.collectAsStateWithLifecycle(initialValue = false)
     val categories by itemViewModel.categories.collectAsStateWithLifecycle()
     val categoryAttributes by itemViewModel.categoryAttributes.collectAsStateWithLifecycle()
+
+    LaunchedEffect(cardDetails, categories, categoryAttributes) {
+        Log.d("MainContent", "Data updated - cardDetails: ${cardDetails.size}, categories: ${categories.size}, attributes: ${categoryAttributes.size}")
+    }
 
     val onAddAttribute = { attribute: CategoryAttribute ->
         itemViewModel.addCategoryAttribute(attribute)
