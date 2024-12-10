@@ -42,6 +42,9 @@ fun ItemCreateDialog(
     var editedItem by remember { mutableStateOf(emptyItem) }
     var selectedCategoryId by remember { mutableIntStateOf(0) }
     var attributeValues by remember { mutableStateOf(emptyList<ItemAttributeValue>()) }
+    var showNameError by remember { mutableStateOf(false) }
+    var showCategoryError by remember { mutableStateOf(false) }
+    var attributeErrors by remember { mutableStateOf(mapOf<Int, Boolean>()) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -63,6 +66,30 @@ fun ItemCreateDialog(
         }
     }
 
+    fun validateFields(): Boolean {
+        var isValid = true
+        
+        // Validate name
+        showNameError = editedItem.name.isBlank()
+        if (showNameError) isValid = false
+
+        // Validate category
+        showCategoryError = editedItem.categoryId == 0
+        if (showCategoryError) isValid = false
+
+        // Validate required attributes
+        val relevantAttributes = categoryAttributes.filter { it.categoryId == selectedCategoryId }
+        attributeErrors = relevantAttributes
+            .filter { it.isRequired }
+            .associate { attribute -> 
+                val value = attributeValues.find { it.attributeId == attribute.id }?.value
+                attribute.id to (value?.isBlank() ?: true)
+            }
+        if (attributeErrors.any { it.value }) isValid = false
+
+        return isValid
+    }
+
     Scaffold(
         topBar = {
             FullScreenDialogTopBar(
@@ -73,30 +100,9 @@ fun ItemCreateDialog(
                     onNavigateBack()
                 },
                 onSave = {
-                    if (editedItem.categoryId == 0) {
+                    if (!validateFields()) {
                         scope.launch {
-                            snackbarHostState.showSnackbar("Item name and category are required")
-                        }
-                        return@FullScreenDialogTopBar
-                    }
-
-                    if (editedItem.name.isBlank()) {
-                        scope.launch {
-                            snackbarHostState.showSnackbar("Item name cannot be empty")
-                        }
-                        return@FullScreenDialogTopBar
-                    }
-
-                    val relevantAttributes = categoryAttributes.filter { it.categoryId == selectedCategoryId }
-                    val hasEmptyRequired = relevantAttributes
-                        .filter { it.isRequired }
-                        .any { attribute -> 
-                            attributeValues.find { it.attributeId == attribute.id }?.value?.isBlank() ?: true
-                        }
-
-                    if (hasEmptyRequired) {
-                        scope.launch {
-                            snackbarHostState.showSnackbar("Please fill in all required fields")
+                            snackbarHostState.showSnackbar("Please correct the highlighted fields")
                         }
                         return@FullScreenDialogTopBar
                     }
@@ -123,60 +129,103 @@ fun ItemCreateDialog(
                     .fillMaxWidth()
                     .padding(bottom = 8.dp)
 
-                OutlinedTextField(
-                    value = editedItem.name,
-                    onValueChange = { editedItem = editedItem.copy(name = it) },
-                    label = { Text("Name") },
-                    modifier = fieldModifier,
-                    isError = editedItem.name.isBlank()
-                )
+                Column {
+                    OutlinedTextField(
+                        value = editedItem.name,
+                        onValueChange = { 
+                            editedItem = editedItem.copy(name = it)
+                            showNameError = false
+                        },
+                        label = { Text("Name *") },
+                        modifier = fieldModifier,
+                        isError = showNameError
+                    )
+                    if (showNameError) {
+                        Text(
+                            text = "Name is required",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 16.dp)
+                        )
+                    }
+                }
                 
-                CategoryDropdown(
-                    categories = categories,
-                    selectedCategoryId = selectedCategoryId,
-                    onCategorySelected = { categoryId ->
-                        selectedCategoryId = categoryId
-                        editedItem = editedItem.copy(categoryId = categoryId)
-                        onCategorySelected(categoryId)
-                    },
-                    modifier = fieldModifier
-                )
+                Column {
+                    CategoryDropdown(
+                        categories = categories,
+                        selectedCategoryId = selectedCategoryId,
+                        onCategorySelected = { categoryId ->
+                            selectedCategoryId = categoryId
+                            editedItem = editedItem.copy(categoryId = categoryId)
+                            showCategoryError = false
+                            onCategorySelected(categoryId)
+                        },
+                        modifier = fieldModifier,
+                        isError = showCategoryError
+                    )
+                    if (showCategoryError) {
+                        Text(
+                            text = "Category is required",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 16.dp)
+                        )
+                    }
+                }
 
                 // Only show attribute fields if a category is selected
                 if (selectedCategoryId != 0) {
                     categoryAttributes
                         .filter { it.categoryId == selectedCategoryId }
                         .forEach { attribute ->
-                            when (attribute.valueType) {
-                                CategoryAttribute.TYPE_STRING, CategoryAttribute.TYPE_NUMBER -> {
-                                    OutlinedTextField(
-                                        value = attributeValues.find { it.attributeId == attribute.id }?.value ?: "",
-                                        onValueChange = { value ->
-                                            attributeValues = attributeValues.map { 
-                                                if (it.attributeId == attribute.id) it.copy(value = value)
-                                                else it
-                                            }
-                                        },
-                                        label = { Text(attribute.name + if (attribute.isRequired) " *" else "") },
-                                        modifier = fieldModifier,
-                                        isError = attribute.isRequired && 
-                                                (attributeValues.find { it.attributeId == attribute.id }?.value?.isBlank() ?: true)
-                                    )
-                                }
-                                CategoryAttribute.TYPE_DATE_STRING -> {
-                                    OutlinedTextField(
-                                        value = attributeValues.find { it.attributeId == attribute.id }?.value ?: "",
-                                        onValueChange = { value ->
-                                            attributeValues = attributeValues.map { 
-                                                if (it.attributeId == attribute.id) it.copy(value = value)
-                                                else it
-                                            }
-                                        },
-                                        label = { Text("${attribute.name}${if (attribute.isRequired) " *" else ""} (YYYY-MM-DD)") },
-                                        modifier = fieldModifier,
-                                        isError = attribute.isRequired && 
-                                                (attributeValues.find { it.attributeId == attribute.id }?.value?.isBlank() ?: true)
-                                    )
+                            Column {
+                                when (attribute.valueType) {
+                                    CategoryAttribute.TYPE_STRING, CategoryAttribute.TYPE_NUMBER -> {
+                                        OutlinedTextField(
+                                            value = attributeValues.find { it.attributeId == attribute.id }?.value ?: "",
+                                            onValueChange = { value ->
+                                                attributeValues = attributeValues.map { 
+                                                    if (it.attributeId == attribute.id) it.copy(value = value)
+                                                    else it
+                                                }
+                                                attributeErrors = attributeErrors - attribute.id
+                                            },
+                                            label = { Text(attribute.name + if (attribute.isRequired) " *" else "") },
+                                            modifier = fieldModifier,
+                                            isError = attributeErrors[attribute.id] == true
+                                        )
+                                        if (attributeErrors[attribute.id] == true) {
+                                            Text(
+                                                text = "${attribute.name} is required",
+                                                color = MaterialTheme.colorScheme.error,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                modifier = Modifier.padding(start = 16.dp)
+                                            )
+                                        }
+                                    }
+                                    CategoryAttribute.TYPE_DATE_STRING -> {
+                                        OutlinedTextField(
+                                            value = attributeValues.find { it.attributeId == attribute.id }?.value ?: "",
+                                            onValueChange = { value ->
+                                                attributeValues = attributeValues.map { 
+                                                    if (it.attributeId == attribute.id) it.copy(value = value)
+                                                    else it
+                                                }
+                                                attributeErrors = attributeErrors - attribute.id
+                                            },
+                                            label = { Text("${attribute.name}${if (attribute.isRequired) " *" else ""} (YYYY-MM-DD)") },
+                                            modifier = fieldModifier,
+                                            isError = attributeErrors[attribute.id] == true
+                                        )
+                                        if (attributeErrors[attribute.id] == true) {
+                                            Text(
+                                                text = "${attribute.name} is required",
+                                                color = MaterialTheme.colorScheme.error,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                modifier = Modifier.padding(start = 16.dp)
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
