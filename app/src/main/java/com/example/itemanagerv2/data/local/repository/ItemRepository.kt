@@ -75,8 +75,22 @@ constructor(
     }
 
     suspend fun insertItem(item: Item): Long {
-        itemDao.insert(item)
-        return item.id.toLong()
+        return database.withTransaction {
+            itemDao.insert(item)
+        }
+    }
+
+    suspend fun insertItemWithAttributes(item: Item, attributes: List<ItemAttributeValue>): Long {
+        return database.withTransaction {
+            val itemId = itemDao.insert(item)
+            
+            // Update attribute values with the new item ID
+            attributes.forEach { attribute ->
+                itemAttributeValueDao.insertAttributeValue(attribute.copy(itemId = itemId.toInt()))
+            }
+            
+            itemId
+        }
     }
 
     suspend fun insertItemAttributeValue(attributeValue: ItemAttributeValue): Long {

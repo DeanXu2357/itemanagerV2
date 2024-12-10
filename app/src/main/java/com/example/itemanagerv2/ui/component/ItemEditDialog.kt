@@ -30,22 +30,37 @@ fun ItemEditDialog(
     onSave: (ItemCardDetail) -> Unit,
     onAddImage: () -> Unit,
     onDeleteImage: (Int) -> Unit,
-    onCategorySelected: (Int) -> Unit = {},
+    onCategorySelected: (Int) -> Unit,
     onSetCoverImage: (Int, Int) -> Unit
 ) {
     var editedItem by remember { mutableStateOf(item) }
     var isDetailExpanded by remember { mutableStateOf(true) }
     var isQRCodeExpanded by remember { mutableStateOf(true) }
     var selectedCategoryId by remember { mutableIntStateOf(item.categoryId) }
-    
-    // Initialize attribute values map with existing values
-    var attributeValues by remember { 
-        mutableStateOf(item.attributes.associate { it.attributeId to it.value })
-    }
+    var attributeValues by remember { mutableStateOf(item.attributes) }
 
     // Update editedItem when item changes (e.g., when new images are added)
     LaunchedEffect(item) {
         editedItem = item
+    }
+
+    // Update attribute values when category changes or attributes are loaded
+    LaunchedEffect(selectedCategoryId, categoryAttributes) {
+        if (selectedCategoryId != 0) {
+            val relevantAttributes = categoryAttributes.filter { it.categoryId == selectedCategoryId }
+            // Preserve existing values when updating attributes
+            attributeValues = relevantAttributes.map { attribute ->
+                val existingValue = attributeValues.find { it.attributeId == attribute.id }
+                existingValue ?: ItemAttributeValue(
+                    id = 0,
+                    itemId = editedItem.id,
+                    attributeId = attribute.id,
+                    value = attribute.defaultValue ?: "",
+                    createdAt = Date(),
+                    updatedAt = Date()
+                )
+            }
+        }
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -64,28 +79,29 @@ fun ItemEditDialog(
                         return@FullScreenDialogTopBar
                     }
 
-                    if (editedItem.name.isNotBlank()) {
-                        val newAttributes = categoryAttributes
-                            .filter { it.categoryId == selectedCategoryId }
-                            .map { attribute ->
-                                val value = attributeValues[attribute.id] ?: attribute.defaultValue ?: ""
-                                val existingAttr = editedItem.attributes.find { it.attributeId == attribute.id }
-                                ItemAttributeValue(
-                                    id = existingAttr?.id ?: 0,
-                                    itemId = editedItem.id,
-                                    attributeId = attribute.id,
-                                    value = value,
-                                    createdAt = existingAttr?.createdAt ?: Date(),
-                                    updatedAt = Date()
-                                )
-                            }
-                        onSave(editedItem.copy(attributes = newAttributes))
-                        onDismiss()
-                    } else {
+                    if (editedItem.name.isBlank()) {
                         scope.launch {
                             snackbarHostState.showSnackbar("Item name cannot be empty")
                         }
+                        return@FullScreenDialogTopBar
                     }
+
+                    val relevantAttributes = categoryAttributes.filter { it.categoryId == selectedCategoryId }
+                    val hasEmptyRequired = relevantAttributes
+                        .filter { it.isRequired }
+                        .any { attribute -> 
+                            attributeValues.find { it.attributeId == attribute.id }?.value?.isBlank() ?: true
+                        }
+
+                    if (hasEmptyRequired) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Please fill in all required fields")
+                        }
+                        return@FullScreenDialogTopBar
+                    }
+
+                    onSave(editedItem.copy(attributes = attributeValues))
+                    onDismiss()
                 }
             )
         },
@@ -103,36 +119,32 @@ fun ItemEditDialog(
                     val isCoverImage = imageId == editedItem.coverImageId
                     val remainingImages = editedItem.images.filter { it.id != imageId }
                     
-                    // If we're deleting the cover image and there are remaining images,
-                    // set the first remaining image as the new cover
-                    if (isCoverImage && remainingImages.isNotEmpty()) {
-                        val newCoverImage = remainingImages.first()
-                        editedItem = editedItem.copy(
-                            images = remainingImages,
-                            coverImageId = newCoverImage.id,
-                            coverImage = newCoverImage
-                        )
-                    } else if (isCoverImage) {
-                        // If we're deleting the cover image and there are no remaining images
-                        editedItem = editedItem.copy(
-                            images = remainingImages,
-                            coverImageId = null,
-                            coverImage = null
-                        )
-                    } else {
-                        // If we're not deleting the cover image
-                        editedItem = editedItem.copy(images = remainingImages)
+                    editedItem = when {
+                        isCoverImage && remainingImages.isNotEmpty() -> {
+                            val newCoverImage = remainingImages.first()
+                            editedItem.copy(
+                                images = remainingImages,
+                                coverImageId = newCoverImage.id,
+                                coverImage = newCoverImage
+                            )
+                        }
+                        isCoverImage -> {
+                            editedItem.copy(
+                                images = remainingImages,
+                                coverImageId = null,
+                                coverImage = null
+                            )
+                        }
+                        else -> editedItem.copy(images = remainingImages)
                     }
                     
                     onDeleteImage(imageId)
                 },
                 onSetCover = { imageId ->
-                    // Update local state
                     editedItem = editedItem.copy(
                         coverImageId = imageId,
                         coverImage = editedItem.images.find { it.id == imageId }
                     )
-                    // Update database immediately
                     onSetCoverImage(editedItem.id, imageId)
                 },
                 selectedCoverImageId = editedItem.coverImageId
@@ -152,7 +164,8 @@ fun ItemEditDialog(
                         value = editedItem.name,
                         onValueChange = { editedItem = editedItem.copy(name = it) },
                         label = { Text("Name") },
-                        modifier = fieldModifier
+                        modifier = fieldModifier,
+                        isError = editedItem.name.isBlank()
                     )
                     
                     CategoryDropdown(
@@ -161,45 +174,50 @@ fun ItemEditDialog(
                         onCategorySelected = { categoryId ->
                             selectedCategoryId = categoryId
                             editedItem = editedItem.copy(categoryId = categoryId)
-                            // Clear attribute values when category changes
-                            attributeValues = emptyMap()
-                            // Load attributes for the selected category
                             onCategorySelected(categoryId)
                         },
                         modifier = fieldModifier
                     )
 
-                    // FIXME: It should display fields dynamically based on ItemAttributeValue belong to the item, not CategoryAttribute
-                    // Dynamic attribute fields based on selected category
-                    categoryAttributes
-                        .filter { it.categoryId == selectedCategoryId }
-                        .forEach { attribute ->
-                            when (attribute.valueType) {
-                                CategoryAttribute.TYPE_STRING, CategoryAttribute.TYPE_NUMBER -> {
-                                    OutlinedTextField(
-                                        value = attributeValues[attribute.id] ?: attribute.defaultValue ?: "",
-                                        onValueChange = { value ->
-                                            attributeValues = attributeValues + (attribute.id to value)
-                                        },
-                                        label = { Text(attribute.name) },
-                                        modifier = fieldModifier,
-                                        isError = attribute.isRequired && (attributeValues[attribute.id]?.isBlank() ?: true)
-                                    )
-                                }
-                                CategoryAttribute.TYPE_DATE_STRING -> {
-                                    // TODO: Implement date picker
-                                    OutlinedTextField(
-                                        value = attributeValues[attribute.id] ?: attribute.defaultValue ?: "",
-                                        onValueChange = { value ->
-                                            attributeValues = attributeValues + (attribute.id to value)
-                                        },
-                                        label = { Text("${attribute.name} (YYYY-MM-DD)") },
-                                        modifier = fieldModifier,
-                                        isError = attribute.isRequired && (attributeValues[attribute.id]?.isBlank() ?: true)
-                                    )
+                    // Only show attribute fields if a category is selected
+                    if (selectedCategoryId != 0) {
+                        categoryAttributes
+                            .filter { it.categoryId == selectedCategoryId }
+                            .forEach { attribute ->
+                                when (attribute.valueType) {
+                                    CategoryAttribute.TYPE_STRING, CategoryAttribute.TYPE_NUMBER -> {
+                                        OutlinedTextField(
+                                            value = attributeValues.find { it.attributeId == attribute.id }?.value ?: "",
+                                            onValueChange = { value ->
+                                                attributeValues = attributeValues.map { 
+                                                    if (it.attributeId == attribute.id) it.copy(value = value)
+                                                    else it
+                                                }
+                                            },
+                                            label = { Text(attribute.name + if (attribute.isRequired) " *" else "") },
+                                            modifier = fieldModifier,
+                                            isError = attribute.isRequired && 
+                                                    (attributeValues.find { it.attributeId == attribute.id }?.value?.isBlank() ?: true)
+                                        )
+                                    }
+                                    CategoryAttribute.TYPE_DATE_STRING -> {
+                                        OutlinedTextField(
+                                            value = attributeValues.find { it.attributeId == attribute.id }?.value ?: "",
+                                            onValueChange = { value ->
+                                                attributeValues = attributeValues.map { 
+                                                    if (it.attributeId == attribute.id) it.copy(value = value)
+                                                    else it
+                                                }
+                                            },
+                                            label = { Text("${attribute.name}${if (attribute.isRequired) " *" else ""} (YYYY-MM-DD)") },
+                                            modifier = fieldModifier,
+                                            isError = attribute.isRequired && 
+                                                    (attributeValues.find { it.attributeId == attribute.id }?.value?.isBlank() ?: true)
+                                        )
+                                    }
                                 }
                             }
-                        }
+                    }
                 }
             }
 
