@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 import java.util.Date
 
 @Composable
-fun ItemCreatePage(
+fun ItemCreateDialog(
     categories: List<ItemCategoryArg>,
     categoryAttributes: List<CategoryAttribute>,
     onNavigateBack: () -> Unit,

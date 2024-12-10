@@ -16,7 +16,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.FormatListNumberedRtl
 import androidx.compose.material3.*
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -192,7 +191,7 @@ fun MainContent(
     }
 
     if (showCreatePage.value) {
-        ItemCreatePage(
+        ItemCreateDialog(
             categories = categories,
             categoryAttributes = categoryAttributes,
             onNavigateBack = { showCreatePage.value = false },
