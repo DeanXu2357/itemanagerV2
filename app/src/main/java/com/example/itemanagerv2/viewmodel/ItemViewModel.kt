@@ -1,6 +1,7 @@
 package com.example.itemanagerv2.viewmodel
 
 import android.graphics.Bitmap
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -110,7 +111,6 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
 
                 val newItemId = itemRepository.insertItemWithAttributes(item, newItem.attributes).toInt()
 
-                
                 newItem.images.forEach { image ->
                     itemRepository.insertImage(
                         Image(
@@ -183,10 +183,10 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
         }
     }
 
-    fun addImageToItem(itemId: Int, bitmap: Bitmap, onImageAdded: (ItemCardDetail?) -> Unit) {
+    fun addImageToItem(itemId: Int, bitmap: Bitmap, sourceUri: Uri, onImageAdded: (ItemCardDetail?) -> Unit) {
         viewModelScope.launch {
             try {
-                val filePath = imageManager.saveImage(bitmap)
+                val filePath = imageManager.saveImage(bitmap, sourceUri)
                 val image =
                     Image(
                         filePath = filePath,

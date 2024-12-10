@@ -52,7 +52,7 @@ class MainActivity : ComponentActivity() {
         uri?.let { selectedUri ->
             contentResolver.openInputStream(selectedUri)?.use { inputStream ->
                 val bitmap = BitmapFactory.decodeStream(inputStream)
-                itemViewModel.addImageToItem(currentEditingItemId, bitmap) { updatedItem ->
+                itemViewModel.addImageToItem(currentEditingItemId, bitmap, selectedUri) { updatedItem ->
                     updatedItem?.let { item ->
                         onImageAddedCallback?.invoke(item)
                     }
