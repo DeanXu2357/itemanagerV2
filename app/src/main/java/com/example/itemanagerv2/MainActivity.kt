@@ -347,19 +347,9 @@ fun AppScaffold(
                 0 ->
                     MainPage(
                         cardDetails = cardDetails,
-                        categories = categories,
-                        categoryAttributes = categoryAttributes,
-                        onSaveEdit = onSaveEdit,
                         onManualAdd = onManualAdd,
                         onScanAdd = onScanAdd,
                         onDeleteCard = onDeleteCard,
-                        onAddImage = onAddImage,
-                        onDeleteImage = { itemId, imageId -> 
-                            val isCoverImage = cardDetails.find { it.id == itemId }?.coverImageId == imageId
-                            onDeleteImage(itemId, imageId, isCoverImage)
-                        },
-                        onCategorySelected = onLoadCategoryAttributes,
-                        onSetCoverImage = onSetCoverImage,
                         onItemSelect = onItemSelect
                     )
 

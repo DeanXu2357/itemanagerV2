@@ -23,16 +23,9 @@ import java.util.Date
 @Composable
 fun MainPage(
     cardDetails: List<ItemCardDetail>,
-    categories: List<ItemCategoryArg>,
-    categoryAttributes: List<CategoryAttribute>,
-    onSaveEdit: (ItemCardDetail) -> Unit,
     onManualAdd: () -> Unit,
     onScanAdd: () -> Unit,
     onDeleteCard: (ItemCardDetail) -> Unit,
-    onAddImage: (Int, (ItemCardDetail) -> Unit) -> Unit,
-    onDeleteImage: (Int, Int) -> Unit,
-    onCategorySelected: (Int) -> Unit,
-    onSetCoverImage: (Int, Int) -> Unit,
     onItemSelect: (ItemCardDetail) -> Unit
 ) {
     val gridState = rememberLazyGridState()
@@ -135,38 +128,12 @@ fun MainPagePreview() {
         )
     )
 
-    val previewCategories = listOf(
-        ItemCategoryArg(1, "Electronics"),
-        ItemCategoryArg(2, "Furniture")
-    )
-
-    val previewAttributes = listOf(
-        CategoryAttribute(
-            id = 1,
-            categoryId = 1,
-            name = "Brand",
-            isRequired = true,
-            isEditable = true,
-            valueType = CategoryAttribute.TYPE_STRING,
-            defaultValue = null,
-            createdAt = Date(),
-            updatedAt = Date()
-        )
-    )
-
     BaseTheme {
         MainPage(
             cardDetails = previewCardDetails,
-            categories = previewCategories,
-            categoryAttributes = previewAttributes,
-            onSaveEdit = { },
             onManualAdd = { },
             onScanAdd = { },
             onDeleteCard = { },
-            onAddImage = { _, _ -> },
-            onDeleteImage = { _, _ -> },
-            onCategorySelected = { },
-            onSetCoverImage = { _, _ -> },
             onItemSelect = { }
         )
     }
