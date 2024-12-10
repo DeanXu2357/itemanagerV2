@@ -236,7 +236,10 @@ fun MainContent(
                 itemViewModel.updateItemCoverImage(itemId, imageId)
             },
             selectedTab = selectedTab,
-            onItemSelect = { item -> selectedItem.value = item }
+            onItemSelect = { item -> 
+                itemViewModel.loadCategoryAttributes(item.categoryId)
+                selectedItem.value = item 
+            }
         )
 
         // View Dialog
