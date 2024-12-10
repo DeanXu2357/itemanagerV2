@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
-
 package com.example.itemanagerv2.ui.component
 
 import androidx.compose.foundation.layout.*
@@ -12,7 +10,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.itemanagerv2.data.local.entity.CategoryAttribute
 import com.example.itemanagerv2.data.local.entity.Image
 import com.example.itemanagerv2.data.local.entity.ItemAttributeValue
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
