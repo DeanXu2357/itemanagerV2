@@ -45,6 +45,7 @@ class MainActivity : ComponentActivity() {
     private var isEditFromView = mutableStateOf(false)
     private var forceRecompose = mutableStateOf(0)
     private var showCreatePage = mutableStateOf(false)
+    private var isCreatingItem = mutableStateOf(false)
 
     private val imagePickerLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -52,9 +53,13 @@ class MainActivity : ComponentActivity() {
         uri?.let { selectedUri ->
             contentResolver.openInputStream(selectedUri)?.use { inputStream ->
                 val bitmap = BitmapFactory.decodeStream(inputStream)
-                itemViewModel.addImageToItem(currentEditingItemId, bitmap, selectedUri) { updatedItem ->
-                    updatedItem?.let { item ->
-                        onImageAddedCallback?.invoke(item)
+                if (isCreatingItem.value) {
+                    itemViewModel.addPendingImage(bitmap, selectedUri)
+                } else {
+                    itemViewModel.addImageToItem(currentEditingItemId, bitmap, selectedUri) { updatedItem ->
+                        updatedItem?.let { item ->
+                            onImageAddedCallback?.invoke(item)
+                        }
                     }
                 }
             }
@@ -119,6 +124,8 @@ class MainActivity : ComponentActivity() {
                 when {
                     showCreatePage.value -> {
                         showCreatePage.value = false
+                        isCreatingItem.value = false
+                        itemViewModel.clearPendingImages()
                     }
                     showEditDialog.value -> {
                         showEditDialog.value = false
@@ -156,11 +163,24 @@ class MainActivity : ComponentActivity() {
                             itemViewModel.refreshItems()
                         }
                     },
+                    onPickImageForCreate = {
+                        pendingImagePick = true
+                        isCreatingItem.value = true
+                        checkAndRequestPermission {
+                            pendingImagePick = false
+                            imagePickerLauncher.launch("image/*")
+                        }
+                    },
                     showCreatePage = showCreatePage,
                     selectedTab = selectedTab,
                     selectedItem = selectedItem,
                     showEditDialog = showEditDialog,
-                    isEditFromView = isEditFromView
+                    isEditFromView = isEditFromView,
+                    onCreateDismiss = {
+                        showCreatePage.value = false
+                        isCreatingItem.value = false
+                        itemViewModel.clearPendingImages()
+                    }
                 )
             }
         }
@@ -171,16 +191,19 @@ class MainActivity : ComponentActivity() {
 fun MainContent(
     itemViewModel: ItemViewModel,
     onPickImage: (Int, (ItemCardDetail) -> Unit) -> Unit,
+    onPickImageForCreate: () -> Unit,
     showCreatePage: MutableState<Boolean>,
     selectedTab: MutableState<Int>,
     selectedItem: MutableState<ItemCardDetail?>,
     showEditDialog: MutableState<Boolean>,
-    isEditFromView: MutableState<Boolean>
+    isEditFromView: MutableState<Boolean>,
+    onCreateDismiss: () -> Unit
 ) {
     val cardDetails by itemViewModel.itemCardDetails.collectAsStateWithLifecycle()
     val isLoading by itemViewModel.isLoading.collectAsStateWithLifecycle(initialValue = false)
     val categories by itemViewModel.categories.collectAsStateWithLifecycle()
     val categoryAttributes by itemViewModel.categoryAttributes.collectAsStateWithLifecycle()
+    val pendingImages by itemViewModel.pendingImages.collectAsStateWithLifecycle()
 
     LaunchedEffect(cardDetails, categories, categoryAttributes) {
         Log.d("MainContent", "Data updated - cardDetails: ${cardDetails.size}, categories: ${categories.size}, attributes: ${categoryAttributes.size}")
@@ -194,15 +217,19 @@ fun MainContent(
         ItemCreateDialog(
             categories = categories,
             categoryAttributes = categoryAttributes,
-            onNavigateBack = { showCreatePage.value = false },
-            onSave = { newItem ->
-                itemViewModel.addNewItem(newItem)
+            pendingImages = pendingImages,
+            onNavigateBack = onCreateDismiss,
+            onSave = { newItem, pendingImages ->
+                itemViewModel.addNewItemWithImages(newItem, pendingImages)
                 itemViewModel.refreshItems()
-                showCreatePage.value = false
+                onCreateDismiss()
             },
             onCategorySelected = { categoryId ->
                 itemViewModel.loadCategoryAttributes(categoryId)
-            }
+            },
+            onAddImage = onPickImageForCreate,
+            onRemoveImage = { index -> itemViewModel.removePendingImage(index) },
+            onClearImages = { itemViewModel.clearPendingImages() }
         )
     } else {
         AppScaffold(

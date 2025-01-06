@@ -14,6 +14,7 @@ import com.example.itemanagerv2.data.local.model.ItemCategoryArg
 import com.example.itemanagerv2.data.local.model.toNavArg
 import com.example.itemanagerv2.data.local.repository.ItemRepository
 import com.example.itemanagerv2.data.manager.ImageManager
+import com.example.itemanagerv2.ui.component.PendingImage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.Date
 import javax.inject.Inject
@@ -51,6 +52,10 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
     private val _categoryAttributes = MutableStateFlow<List<CategoryAttribute>>(emptyList())
     val categoryAttributes: StateFlow<List<CategoryAttribute>> = _categoryAttributes.asStateFlow()
 
+    // Store pending images in memory
+    private val _pendingImages = MutableStateFlow<List<PendingImage>>(emptyList())
+    val pendingImages: StateFlow<List<PendingImage>> = _pendingImages.asStateFlow()
+
     init {
         loadMoreItems()
         loadCategories()
@@ -61,6 +66,74 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
         object Loading : DeleteStatus()
         object Success : DeleteStatus()
         data class Error(val message: String) : DeleteStatus()
+    }
+
+    fun addPendingImage(bitmap: Bitmap, uri: Uri) {
+        val newImage = PendingImage(
+            bitmap = bitmap,
+            uri = uri,
+            order = _pendingImages.value.size
+        )
+        _pendingImages.value = _pendingImages.value + newImage
+    }
+
+    fun removePendingImage(index: Int) {
+        _pendingImages.value = _pendingImages.value.filterIndexed { i, _ -> i != index }
+    }
+
+    fun clearPendingImages() {
+        _pendingImages.value = emptyList()
+    }
+
+    fun addNewItemWithImages(newItem: ItemCardDetail, pendingImages: List<PendingImage>) {
+        viewModelScope.launch {
+            try {
+                val item =
+                    Item(
+                        id = 0,
+                        name = newItem.name,
+                        categoryId = newItem.categoryId,
+                        codeType = newItem.codeType,
+                        codeContent = newItem.codeContent,
+                        codeImageId = newItem.codeImageId,
+                        coverImageId = null, // Will be set to first image if any
+                        createdAt = System.currentTimeMillis(),
+                        updatedAt = System.currentTimeMillis()
+                    )
+
+                // First insert the item and its attributes
+                val newItemId = itemRepository.insertItemWithAttributes(item, newItem.attributes).toInt()
+
+                // Then save each pending image
+                pendingImages.forEachIndexed { index, pendingImage ->
+                    val filePath = imageManager.saveImage(pendingImage.bitmap, pendingImage.uri)
+                    val image = Image(
+                        id = 0,
+                        filePath = filePath,
+                        itemId = newItemId,
+                        order = index,
+                        content = null,
+                        createdAt = Date(),
+                        updatedAt = Date()
+                    )
+                    val imageId = itemRepository.insertImage(image).toInt()
+
+                    // Set first image as cover
+                    if (index == 0) {
+                        val updatedItem = item.copy(
+                            id = newItemId,
+                            coverImageId = imageId
+                        )
+                        itemRepository.updateItem(updatedItem)
+                    }
+                }
+
+                refreshItems()
+            } catch (e: Exception) {
+                _error.value = "Error adding item: ${e.message}"
+                Log.e("ItemViewModel", "Error adding item", e)
+            }
+        }
     }
 
     fun loadMoreItems() {
@@ -89,46 +162,6 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
         viewModelScope.launch {
             itemRepository.getAllCategories().collect { categoriesList ->
                 _categories.value = categoriesList.map { it.toNavArg() }
-            }
-        }
-    }
-
-    fun addNewItem(newItem: ItemCardDetail) {
-        viewModelScope.launch {
-            try {
-                val item =
-                    Item(
-                        id = 0,
-                        name = newItem.name,
-                        categoryId = newItem.categoryId,
-                        codeType = newItem.codeType,
-                        codeContent = newItem.codeContent,
-                        codeImageId = newItem.codeImageId,
-                        coverImageId = newItem.coverImageId,
-                        createdAt = System.currentTimeMillis(),
-                        updatedAt = System.currentTimeMillis()
-                    )
-
-                val newItemId = itemRepository.insertItemWithAttributes(item, newItem.attributes).toInt()
-
-                newItem.images.forEach { image ->
-                    itemRepository.insertImage(
-                        Image(
-                            id = 0,
-                            filePath = image.filePath,
-                            itemId = newItemId,
-                            order = image.order,
-                            content = image.content,
-                            createdAt = Date(),
-                            updatedAt = Date()
-                        )
-                    )
-                }
-
-                refreshItems()
-            } catch (e: Exception) {
-                _error.value = "Error adding item: ${e.message}"
-                Log.e("ItemViewModel", "Error adding item", e)
             }
         }
     }

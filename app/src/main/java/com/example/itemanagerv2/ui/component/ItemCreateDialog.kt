@@ -1,5 +1,7 @@
 package com.example.itemanagerv2.ui.component
 
+import android.graphics.Bitmap
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -8,19 +10,30 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.itemanagerv2.data.local.entity.CategoryAttribute
+import com.example.itemanagerv2.data.local.entity.Image
 import com.example.itemanagerv2.data.local.entity.ItemAttributeValue
 import com.example.itemanagerv2.data.local.model.ItemCardDetail
 import com.example.itemanagerv2.data.local.model.ItemCategoryArg
 import kotlinx.coroutines.launch
 import java.util.Date
 
+data class PendingImage(
+    val bitmap: Bitmap,
+    val uri: Uri,
+    val order: Int
+)
+
 @Composable
 fun ItemCreateDialog(
     categories: List<ItemCategoryArg>,
     categoryAttributes: List<CategoryAttribute>,
+    pendingImages: List<PendingImage>,
     onNavigateBack: () -> Unit,
-    onSave: (ItemCardDetail) -> Unit,
-    onCategorySelected: (Int) -> Unit
+    onSave: (ItemCardDetail, List<PendingImage>) -> Unit,
+    onCategorySelected: (Int) -> Unit,
+    onAddImage: () -> Unit,
+    onRemoveImage: (Int) -> Unit,
+    onClearImages: () -> Unit
 ) {
     val emptyItem = ItemCardDetail(
         id = 0,
@@ -97,6 +110,7 @@ fun ItemCreateDialog(
                 onDismiss = {
                     editedItem = emptyItem
                     attributeValues = emptyList()
+                    onClearImages()
                     onNavigateBack()
                 },
                 onSave = {
@@ -112,7 +126,8 @@ fun ItemCreateDialog(
                         attributes = attributeValues
                     )
                     
-                    onSave(finalItem)
+                    onSave(finalItem, pendingImages)
+                    onClearImages()
                     onNavigateBack()
                 }
             )
@@ -124,6 +139,30 @@ fun ItemCreateDialog(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
+            MultiPreviewImageCarousel(
+                images = pendingImages.mapIndexed { index, pending ->
+                    Image(
+                        id = -(index + 1), // Use negative IDs for pending images
+                        filePath = pending.uri.toString(),
+                        itemId = 0,
+                        order = pending.order,
+                        content = null,
+                        createdAt = Date(),
+                        updatedAt = Date()
+                    )
+                },
+                onAddClick = onAddImage,
+                onDeleteClick = { tempId -> 
+                    val index = -tempId - 1
+                    onRemoveImage(index)
+                },
+                onSetCover = { tempId ->
+                    // No need to handle cover image during creation
+                    // The first image will automatically become the cover
+                },
+                selectedCoverImageId = if (pendingImages.isNotEmpty()) -1 else null
+            )
+
             Column(modifier = Modifier.padding(16.dp)) {
                 val fieldModifier = Modifier
                     .fillMaxWidth()
