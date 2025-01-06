@@ -236,10 +236,6 @@ fun MainContent(
             cardDetails = cardDetails,
             categories = categories,
             categoryAttributes = categoryAttributes,
-            onSaveEdit = { itemCardDetail ->
-                itemViewModel.updateItemCardDetail(itemCardDetail)
-                itemViewModel.refreshItems()
-            },
             onManualAdd = { showCreatePage.value = true },
             onScanAdd = { /* TODO: */ },
             onDeleteCard = { itemCardDetail -> itemViewModel.deleteItem(itemCardDetail) },
@@ -252,16 +248,6 @@ fun MainContent(
                 itemViewModel.deleteCategoryAttribute(attributeId)
             },
             onAddAttribute = onAddAttribute,
-            onAddImage = { itemId, onImageAdded ->
-                onPickImage(itemId, onImageAdded)
-            },
-            onDeleteImage = { itemId, imageId, isCoverImage ->
-                itemViewModel.deleteImage(itemId, imageId, isCoverImage)
-                itemViewModel.refreshItems()
-            },
-            onSetCoverImage = { itemId, imageId ->
-                itemViewModel.updateItemCoverImage(itemId, imageId)
-            },
             selectedTab = selectedTab,
             onItemSelect = { item -> 
                 itemViewModel.loadCategoryAttributes(item.categoryId)
@@ -332,7 +318,6 @@ fun AppScaffold(
     cardDetails: List<ItemCardDetail>,
     categories: List<ItemCategoryArg>,
     categoryAttributes: List<CategoryAttribute>,
-    onSaveEdit: (ItemCardDetail) -> Unit,
     onManualAdd: () -> Unit,
     onScanAdd: () -> Unit,
     onDeleteCard: (ItemCardDetail) -> Unit,
@@ -341,9 +326,6 @@ fun AppScaffold(
     onLoadCategoryAttributes: (Int) -> Unit,
     onDeleteAttribute: (Int) -> Unit,
     onAddAttribute: (CategoryAttribute) -> Unit,
-    onAddImage: (Int, (ItemCardDetail) -> Unit) -> Unit,
-    onDeleteImage: (Int, Int, Boolean) -> Unit,
-    onSetCoverImage: (Int, Int) -> Unit,
     selectedTab: MutableState<Int>,
     onItemSelect: (ItemCardDetail) -> Unit
 ) {
