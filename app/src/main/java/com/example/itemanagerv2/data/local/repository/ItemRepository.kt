@@ -20,12 +20,12 @@ import kotlinx.coroutines.withContext
 class ItemRepository
 @Inject
 constructor(
-        private val database: AppDatabase,
-        private val itemDao: ItemDao,
-        private val itemCategoryDao: ItemCategoryDao,
-        private val categoryAttributeDao: CategoryAttributeDao,
-        private val itemAttributeValueDao: ItemAttributeValueDao,
-        private val imageDao: ImageDao
+    private val database: AppDatabase,
+    private val itemDao: ItemDao,
+    private val itemCategoryDao: ItemCategoryDao,
+    private val categoryAttributeDao: CategoryAttributeDao,
+    private val itemAttributeValueDao: ItemAttributeValueDao,
+    private val imageDao: ImageDao
 ) {
     private var currentPage = 0
     private val pageSize = 20
@@ -38,30 +38,31 @@ constructor(
             val newItems = itemDao.getPaginatedItems(pageSize, currentPage * pageSize)
             if (newItems.isNotEmpty()) {
                 val itemIds = newItems.map { it.id }
+                val categoryIds = newItems.map { it.categoryId }
                 val categories =
-                        itemCategoryDao.getCategoriesForItems(itemIds).map { it.toNavArg() }
+                    itemCategoryDao.getCategoriesForItems(categoryIds).map { it.toNavArg() }
                 val allImages = imageDao.getImagesForItems(itemIds)
                 val allAttributes = itemAttributeValueDao.getAttributesForItems(itemIds)
 
                 val newItemCardDetails =
-                        newItems.map { item ->
-                            ItemCardDetail(
-                                    id = item.id,
-                                    name = item.name,
-                                    categoryId = item.categoryId,
-                                    codeType = item.codeType,
-                                    codeContent = item.codeContent,
-                                    codeImageId = item.codeImageId,
-                                    coverImageId = item.coverImageId,
-                                    createdAt = item.createdAt,
-                                    updatedAt = item.updatedAt,
-                                    category = categories.find { it.id == item.categoryId },
-                                    codeImage = allImages.find { it.id == item.codeImageId },
-                                    coverImage = allImages.find { it.id == item.coverImageId },
-                                    images = allImages.filter { it.itemId == item.id },
-                                    attributes = allAttributes.filter { it.itemId == item.id }
-                            )
-                        }
+                    newItems.map { item ->
+                        ItemCardDetail(
+                            id = item.id,
+                            name = item.name,
+                            categoryId = item.categoryId,
+                            codeType = item.codeType,
+                            codeContent = item.codeContent,
+                            codeImageId = item.codeImageId,
+                            coverImageId = item.coverImageId,
+                            createdAt = item.createdAt,
+                            updatedAt = item.updatedAt,
+                            category = categories.find { it.id == item.categoryId },
+                            codeImage = allImages.find { it.id == item.codeImageId },
+                            coverImage = allImages.find { it.id == item.coverImageId },
+                            images = allImages.filter { it.itemId == item.id },
+                            attributes = allAttributes.filter { it.itemId == item.id }
+                        )
+                    }
 
                 allItems.addAll(newItemCardDetails)
                 emit(allItems.toList())
@@ -74,9 +75,17 @@ constructor(
         }
     }
 
-    suspend fun insertItem(item: Item): Long {
-        itemDao.insert(item)
-        return item.id.toLong()
+    suspend fun insertItemWithAttributes(item: Item, attributes: List<ItemAttributeValue>): Long {
+        return database.withTransaction {
+            val itemId = itemDao.insert(item)
+
+            // Update attribute values with the new item ID
+            attributes.forEach { attribute ->
+                itemAttributeValueDao.insertAttributeValue(attribute.copy(itemId = itemId.toInt()))
+            }
+
+            itemId
+        }
     }
 
     suspend fun insertItemAttributeValue(attributeValue: ItemAttributeValue): Long {
@@ -136,10 +145,6 @@ constructor(
         } catch (e: Exception) {
             Log.e("ItemRepository", "Error deleting image file: $filePath", e)
         }
-    }
-
-    suspend fun updateItemAttributeValue(attributeValue: ItemAttributeValue) {
-        itemAttributeValueDao.updateAttributeValue(attributeValue)
     }
 
     suspend fun deleteItemAttributeValues(itemId: Int) {

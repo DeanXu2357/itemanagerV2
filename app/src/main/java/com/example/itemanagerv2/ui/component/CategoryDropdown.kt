@@ -22,7 +22,8 @@ fun CategoryDropdown(
     categories: List<ItemCategoryArg>,
     selectedCategoryId: Int?,
     onCategorySelected: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isError: Boolean = false
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selectedCategory = categories.find { it.id == selectedCategoryId }
@@ -33,23 +34,39 @@ fun CategoryDropdown(
                 .fillMaxWidth()
                 .clickable { expanded = !expanded },
             shape = RoundedCornerShape(4.dp),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+            border = BorderStroke(
+                1.dp, 
+                if (isError) MaterialTheme.colorScheme.error 
+                else MaterialTheme.colorScheme.outline
+            )
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = selectedCategory?.name ?: "No category selected",
-                    style = MaterialTheme.typography.bodyLarge
+                    text = "Category *",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (isError) MaterialTheme.colorScheme.error 
+                           else MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Icon(
-                    if (expanded) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
-                    contentDescription = "Toggle dropdown"
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = selectedCategory?.name ?: "Select a category",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (isError) MaterialTheme.colorScheme.error 
+                               else MaterialTheme.colorScheme.onSurface
+                    )
+                    Icon(
+                        if (expanded) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
+                        contentDescription = "Toggle dropdown",
+                        tint = if (isError) MaterialTheme.colorScheme.error 
+                              else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
 

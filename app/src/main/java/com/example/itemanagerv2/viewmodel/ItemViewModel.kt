@@ -1,6 +1,7 @@
 package com.example.itemanagerv2.viewmodel
 
 import android.graphics.Bitmap
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,6 +14,7 @@ import com.example.itemanagerv2.data.local.model.ItemCategoryArg
 import com.example.itemanagerv2.data.local.model.toNavArg
 import com.example.itemanagerv2.data.local.repository.ItemRepository
 import com.example.itemanagerv2.data.manager.ImageManager
+import com.example.itemanagerv2.ui.component.PendingImage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.Date
 import javax.inject.Inject
@@ -21,6 +23,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -49,6 +52,10 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
     private val _categoryAttributes = MutableStateFlow<List<CategoryAttribute>>(emptyList())
     val categoryAttributes: StateFlow<List<CategoryAttribute>> = _categoryAttributes.asStateFlow()
 
+    // Store pending images in memory
+    private val _pendingImages = MutableStateFlow<List<PendingImage>>(emptyList())
+    val pendingImages: StateFlow<List<PendingImage>> = _pendingImages.asStateFlow()
+
     init {
         loadMoreItems()
         loadCategories()
@@ -59,6 +66,74 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
         object Loading : DeleteStatus()
         object Success : DeleteStatus()
         data class Error(val message: String) : DeleteStatus()
+    }
+
+    fun addPendingImage(bitmap: Bitmap, uri: Uri) {
+        val newImage = PendingImage(
+            bitmap = bitmap,
+            uri = uri,
+            order = _pendingImages.value.size
+        )
+        _pendingImages.value = _pendingImages.value + newImage
+    }
+
+    fun removePendingImage(index: Int) {
+        _pendingImages.value = _pendingImages.value.filterIndexed { i, _ -> i != index }
+    }
+
+    fun clearPendingImages() {
+        _pendingImages.value = emptyList()
+    }
+
+    fun addNewItemWithImages(newItem: ItemCardDetail, pendingImages: List<PendingImage>) {
+        viewModelScope.launch {
+            try {
+                val item =
+                    Item(
+                        id = 0,
+                        name = newItem.name,
+                        categoryId = newItem.categoryId,
+                        codeType = newItem.codeType,
+                        codeContent = newItem.codeContent,
+                        codeImageId = newItem.codeImageId,
+                        coverImageId = null, // Will be set to first image if any
+                        createdAt = System.currentTimeMillis(),
+                        updatedAt = System.currentTimeMillis()
+                    )
+
+                // First insert the item and its attributes
+                val newItemId = itemRepository.insertItemWithAttributes(item, newItem.attributes).toInt()
+
+                // Then save each pending image
+                pendingImages.forEachIndexed { index, pendingImage ->
+                    val filePath = imageManager.saveImage(pendingImage.bitmap, pendingImage.uri)
+                    val image = Image(
+                        id = 0,
+                        filePath = filePath,
+                        itemId = newItemId,
+                        order = index,
+                        content = null,
+                        createdAt = Date(),
+                        updatedAt = Date()
+                    )
+                    val imageId = itemRepository.insertImage(image).toInt()
+
+                    // Set first image as cover
+                    if (index == 0) {
+                        val updatedItem = item.copy(
+                            id = newItemId,
+                            coverImageId = imageId
+                        )
+                        itemRepository.updateItem(updatedItem)
+                    }
+                }
+
+                refreshItems()
+            } catch (e: Exception) {
+                _error.value = "Error adding item: ${e.message}"
+                Log.e("ItemViewModel", "Error adding item", e)
+            }
+        }
     }
 
     fun loadMoreItems() {
@@ -87,57 +162,6 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
         viewModelScope.launch {
             itemRepository.getAllCategories().collect { categoriesList ->
                 _categories.value = categoriesList.map { it.toNavArg() }
-            }
-        }
-    }
-
-    fun addNewItem(newItem: ItemCardDetail) {
-        viewModelScope.launch {
-            try {
-                val item =
-                    Item(
-                        id = 0,
-                        name = newItem.name,
-                        categoryId = newItem.categoryId,
-                        codeType = newItem.codeType,
-                        codeContent = newItem.codeContent,
-                        codeImageId = newItem.codeImageId,
-                        coverImageId = newItem.coverImageId,
-                        createdAt = System.currentTimeMillis(),
-                        updatedAt = System.currentTimeMillis()
-                    )
-
-                val newItemId = itemRepository.insertItem(item)
-
-                newItem.attributes.forEach { attribute ->
-                    itemRepository.insertItemAttributeValue(
-                        ItemAttributeValue(
-                            id = 0,
-                            itemId = newItemId.toInt(),
-                            attributeId = attribute.attributeId,
-                            value = attribute.value,
-                            createdAt = Date(),
-                            updatedAt = Date()
-                        )
-                    )
-                }
-
-                newItem.images.forEach { image ->
-                    itemRepository.insertImage(
-                        Image(
-                            id = 0,
-                            filePath = image.filePath,
-                            itemId = newItemId.toInt(),
-                            order = image.order,
-                            content = image.content,
-                            createdAt = Date(),
-                            updatedAt = Date()
-                        )
-                    )
-                }
-            } catch (e: Exception) {
-                _error.value = "Error adding item: ${e.message}"
-                Log.e("ItemViewModel", "Error adding item", e)
             }
         }
     }
@@ -182,24 +206,52 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
         }
     }
 
-    fun addImageToItem(itemId: Int, bitmap: Bitmap) {
+    suspend fun getItemDetails(itemId: Int): ItemCardDetail? {
+        return try {
+            itemRepository.getItemCardDetails().first().find { it.id == itemId }
+        } catch (e: Exception) {
+            _error.value = "Error getting item details: ${e.message}"
+            Log.e("ItemViewModel", "Error getting item details", e)
+            null
+        }
+    }
+
+    fun addImageToItem(itemId: Int, bitmap: Bitmap, sourceUri: Uri, onImageAdded: (ItemCardDetail?) -> Unit) {
         viewModelScope.launch {
             try {
-                val filePath = imageManager.saveImage(bitmap)
+                val filePath = imageManager.saveImage(bitmap, sourceUri)
                 val image =
                     Image(
                         filePath = filePath,
                         itemId = itemId,
-                        order = 0, // TODO: Set the correct order
+                        order = 0,
                         content = null,
                         createdAt = Date(),
                         updatedAt = Date()
                     )
-                itemRepository.insertImage(image)
-                refreshItems() // Refresh to show the new image
+                val imageId = itemRepository.insertImage(image)
+                
+                val savedImage = image.copy(id = imageId.toInt())
+                
+                val currentItem = _itemCardDetails.value.find { it.id == itemId }
+                currentItem?.let { item ->
+                    val shouldSetAsCover = item.images.isEmpty()
+                    val updatedItem = item.copy(
+                        images = item.images + savedImage,
+                        coverImageId = if (shouldSetAsCover) savedImage.id else item.coverImageId,
+                        coverImage = if (shouldSetAsCover) savedImage else item.coverImage
+                    )
+                    
+                    _itemCardDetails.value = _itemCardDetails.value.map { 
+                        if (it.id == itemId) updatedItem else it 
+                    }
+                    
+                    onImageAdded(updatedItem)
+                }
             } catch (e: Exception) {
                 _error.value = "Error adding image: ${e.message}"
                 Log.e("ItemViewModel", "Error adding image", e)
+                onImageAdded(null)
             }
         }
     }
@@ -207,38 +259,89 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
     fun deleteImage(itemId: Int, imageId: Int, isCoverImage: Boolean) {
         viewModelScope.launch {
             try {
-                // If this is the cover image, update the item to clear coverImageId
-                if (isCoverImage) {
-                    val item = _itemCardDetails.value.find { it.id == itemId }
-                    item?.let {
-                        updateItemCardDetail(
-                            it.copy(
-                                coverImageId = null,
-                                coverImage = null
-                            )
+                val currentItem = _itemCardDetails.value.find { it.id == itemId }
+                currentItem?.let { item ->
+                    val imageToDelete = item.images.find { it.id == imageId }
+                    imageToDelete?.let {
+                        withContext(Dispatchers.IO) {
+                            imageManager.deleteImage(it.filePath)
+                            itemRepository.deleteImage(it)
+                        }
+                    }
+                    
+                    val remainingImages = item.images.filter { it.id != imageId }
+                    val updatedItem = if (isCoverImage && remainingImages.isNotEmpty()) {
+                        val newCoverImage = remainingImages.first()
+                        item.copy(
+                            images = remainingImages,
+                            coverImageId = newCoverImage.id,
+                            coverImage = newCoverImage
                         )
+                    } else if (isCoverImage) {
+                        item.copy(
+                            images = remainingImages,
+                            coverImageId = null,
+                            coverImage = null
+                        )
+                    } else {
+                        item.copy(images = remainingImages)
+                    }
+
+                    if (isCoverImage) {
+                        val updatedDbItem = Item(
+                            id = updatedItem.id,
+                            name = updatedItem.name,
+                            categoryId = updatedItem.categoryId,
+                            codeType = updatedItem.codeType,
+                            codeContent = updatedItem.codeContent,
+                            codeImageId = updatedItem.codeImageId,
+                            coverImageId = updatedItem.coverImageId,
+                            createdAt = updatedItem.createdAt,
+                            updatedAt = System.currentTimeMillis()
+                        )
+                        itemRepository.updateItem(updatedDbItem)
+                    }
+                    
+                    _itemCardDetails.value = _itemCardDetails.value.map { 
+                        if (it.id == itemId) updatedItem else it 
                     }
                 }
-                
-                // Delete the image file and database record
-                val image = _itemCardDetails.value
-                    .find { it.id == itemId }
-                    ?.images
-                    ?.find { it.id == imageId }
-                
-                image?.let {
-                    withContext(Dispatchers.IO) {
-                        // 使用 ImageManager 刪除實體文件
-                        imageManager.deleteImage(it.filePath)
-                        // 使用 Repository 刪除數據庫記錄
-                        itemRepository.deleteImage(it)
-                    }
-                }
-                
-                refreshItems() 
             } catch (e: Exception) {
                 _error.value = "Error deleting image: ${e.message}"
                 Log.e("ItemViewModel", "Error deleting image", e)
+            }
+        }
+    }
+
+    fun updateItemCoverImage(itemId: Int, imageId: Int) {
+        viewModelScope.launch {
+            try {
+                val currentItem = _itemCardDetails.value.find { it.id == itemId }
+                currentItem?.let { item ->
+                    val updatedItem = Item(
+                        id = item.id,
+                        name = item.name,
+                        categoryId = item.categoryId,
+                        codeType = item.codeType,
+                        codeContent = item.codeContent,
+                        codeImageId = item.codeImageId,
+                        coverImageId = imageId,
+                        createdAt = item.createdAt,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                    itemRepository.updateItem(updatedItem)
+
+                    val updatedItemCardDetail = item.copy(
+                        coverImageId = imageId,
+                        coverImage = item.images.find { it.id == imageId }
+                    )
+                    _itemCardDetails.value = _itemCardDetails.value.map { 
+                        if (it.id == itemId) updatedItemCardDetail else it 
+                    }
+                }
+            } catch (e: Exception) {
+                _error.value = "Error updating cover image: ${e.message}"
+                Log.e("ItemViewModel", "Error updating cover image", e)
             }
         }
     }
@@ -276,7 +379,6 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
 
                 itemRepository.updateItem(item)
 
-                // delete all attribute values for the item
                 itemRepository.deleteItemAttributeValues(updatedItem.id)
 
                 updatedItem.attributes.forEach { attribute ->
@@ -292,7 +394,9 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
                     )
                 }
                 
-                refreshItems() // Refresh to show updated item
+                _itemCardDetails.value = _itemCardDetails.value.map { 
+                    if (it.id == updatedItem.id) updatedItem else it 
+                }
             } catch (e: Exception) {
                 _error.value = "Error updating the item：${e.message}"
                 Log.e("ItemViewModel", "Error updating item", e)
@@ -308,8 +412,9 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
                 _deleteStatus.value = DeleteStatus.Loading
                 itemRepository.deleteItemWithRelations(itemCardDetail.id)
                 _deleteStatus.value = DeleteStatus.Success
+
+                _itemCardDetails.value = _itemCardDetails.value.filter { it.id != itemCardDetail.id }
             } catch (e: Exception) {
-                // Handle error case
                 Log.e("ItemViewModel", "Error deleting item", e)
                 _deleteStatus.value = DeleteStatus.Error(e.message ?: "Unknown error")
             }
@@ -357,7 +462,6 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
         viewModelScope.launch {
             try {
                 itemRepository.deleteCategoryAttribute(attributeId)
-                // 刷新當前屬性列表
                 _categoryAttributes.value =
                     _categoryAttributes.value.filter { it.id != attributeId }
             } catch (e: Exception) {
@@ -367,11 +471,11 @@ constructor(private val itemRepository: ItemRepository, private val imageManager
         }
     }
 
-    fun addCategoryAttribute(attribute: CategoryAttribute) {
+    fun addCategoryAttribute(categoryAttribute: CategoryAttribute) {
         viewModelScope.launch {
             try {
-                itemRepository.insertCategoryAttribute(attribute)
-                loadCategoryAttributes(attribute.categoryId)
+                itemRepository.insertCategoryAttribute(categoryAttribute)
+                loadCategoryAttributes(categoryAttribute.categoryId)
             } catch (e: Exception) {
                 _error.value = "Error adding category attribute: ${e.message}"
                 Log.e("ItemViewModel", "Error adding category attribute", e)

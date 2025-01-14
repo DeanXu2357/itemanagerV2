@@ -22,9 +22,90 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.itemanagerv2.data.local.entity.Image
-import kotlinx.coroutines.launch
 import java.util.Date
 import kotlin.math.absoluteValue
+import kotlinx.coroutines.launch
+
+@Composable
+fun ImageCarousel(
+    images: List<Image>,
+    selectedCoverImageId: Int?,
+    modifier: Modifier = Modifier
+) {
+    if (images.isEmpty()) return
+
+    val pagerState = rememberPagerState(pageCount = { images.size })
+    val coroutineScope = rememberCoroutineScope()
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+        ) { page ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+            ) {
+                val pageOffset = (page - pagerState.currentPage).toFloat()
+                val scale = animateFloatAsState(
+                    targetValue = if (pageOffset == 0f) 1f else 0.8f,
+                    label = "scale"
+                )
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            scaleX = scale.value
+                            scaleY = scale.value
+                            alpha = 1f - pageOffset.absoluteValue.coerceIn(0f, 1f)
+                        },
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    AsyncImage(
+                        model = images[page].filePath,
+                        contentDescription = "Image ${page + 1}",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+        }
+
+        // Carousel indicator
+        if (images.size > 1) {
+            Row(
+                Modifier
+                    .height(50.dp)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                repeat(pagerState.pageCount) { iteration ->
+                    val color = if (pagerState.currentPage == iteration) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .padding(2.dp)
+                            .clip(CircleShape)
+                            .background(color)
+                            .size(8.dp)
+                            .clickable {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(iteration)
+                                }
+                            }
+                    )
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun MultiPreviewImageCarousel(
@@ -34,7 +115,11 @@ fun MultiPreviewImageCarousel(
     onSetCover: (Int) -> Unit,
     selectedCoverImageId: Int?
 ) {
-    val pagerState = rememberPagerState(pageCount = { images.size + 1 })
+    // Local state for preview display
+    var displayedImages by remember(images) { mutableStateOf(images) }
+    var displayedCoverImageId by remember(selectedCoverImageId) { mutableStateOf(selectedCoverImageId) }
+
+    val pagerState = rememberPagerState(pageCount = { displayedImages.size + 1 })
     val coroutineScope = rememberCoroutineScope()
 
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -49,7 +134,7 @@ fun MultiPreviewImageCarousel(
                     .fillMaxSize()
                     .padding(horizontal = 24.dp, vertical = 16.dp)
             ) {
-                if (page < images.size) {
+                if (page < displayedImages.size) {
                     val pageOffset = (page - pagerState.currentPage).toFloat()
                     val scale = animateFloatAsState(
                         targetValue = if (pageOffset == 0f) 1f else 0.8f,
@@ -68,12 +153,12 @@ fun MultiPreviewImageCarousel(
                     ) {
                         Box(modifier = Modifier.fillMaxSize()) {
                             AsyncImage(
-                                model = images[page].filePath,
+                                model = displayedImages[page].filePath,
                                 contentDescription = "Image $page",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
                             )
-                            
+
                             // Action buttons row
                             Row(
                                 modifier = Modifier
@@ -83,7 +168,11 @@ fun MultiPreviewImageCarousel(
                             ) {
                                 // Set as cover button
                                 IconButton(
-                                    onClick = { onSetCover(images[page].id) },
+                                    onClick = {
+                                        val imageId = displayedImages[page].id
+                                        displayedCoverImageId = imageId
+                                        onSetCover(imageId)
+                                    },
                                     modifier = Modifier.background(
                                         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
                                         shape = CircleShape
@@ -92,16 +181,24 @@ fun MultiPreviewImageCarousel(
                                     Icon(
                                         Icons.Default.Image,
                                         contentDescription = "Set as cover",
-                                        tint = if (images[page].id == selectedCoverImageId)
+                                        tint = if (displayedImages[page].id == displayedCoverImageId)
                                             MaterialTheme.colorScheme.primary
-                                        else
-                                            MaterialTheme.colorScheme.onSurface
+                                        else MaterialTheme.colorScheme.onSurface
                                     )
                                 }
-                                
+
                                 // Delete button
                                 IconButton(
-                                    onClick = { onDeleteClick(images[page].id) },
+                                    onClick = {
+                                        val imageId = displayedImages[page].id
+                                        // Update preview display first
+                                        displayedImages = displayedImages.filter { it.id != imageId }
+                                        if (imageId == displayedCoverImageId) {
+                                            displayedCoverImageId = null
+                                        }
+                                        // Then notify parent
+                                        onDeleteClick(imageId)
+                                    },
                                     modifier = Modifier.background(
                                         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
                                         shape = CircleShape
@@ -129,9 +226,7 @@ fun MultiPreviewImageCarousel(
                             FloatingActionButton(
                                 onClick = onAddClick,
                                 modifier = Modifier.size(56.dp)
-                            ) {
-                                Icon(Icons.Default.Add, contentDescription = "Add Image")
-                            }
+                            ) { Icon(Icons.Default.Add, contentDescription = "Add Image") }
                         }
                     }
                 }
@@ -170,7 +265,7 @@ fun MultiPreviewImageCarousel(
 
 @Preview(showBackground = true)
 @Composable
-fun MultiPreviewImageCarouselPreview() {
+fun ImageCarouselPreview() {
     MaterialTheme {
         val currentDate = Date()
         val sampleImages = listOf(
@@ -191,31 +286,37 @@ fun MultiPreviewImageCarouselPreview() {
                 content = "Sample image 2",
                 createdAt = currentDate,
                 updatedAt = currentDate
-            ),
+            )
+        )
+
+        ImageCarousel(
+            images = sampleImages,
+            selectedCoverImageId = sampleImages.firstOrNull()?.id
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MultiPreviewImageCarouselPreview() {
+    MaterialTheme {
+        val currentDate = Date()
+        val sampleImages = listOf(
             Image(
-                id = 3,
-                filePath = "https://example.com/image3.jpg",
+                id = 1,
+                filePath = "https://example.com/image1.jpg",
                 itemId = 1,
-                order = 2,
-                content = "Sample image 3",
+                order = 0,
+                content = "Sample image 1",
                 createdAt = currentDate,
                 updatedAt = currentDate
             ),
             Image(
-                id = 4,
-                filePath = "https://example.com/image4.jpg",
+                id = 2,
+                filePath = "https://example.com/image2.jpg",
                 itemId = 1,
-                order = 3,
-                content = "Sample image 4",
-                createdAt = currentDate,
-                updatedAt = currentDate
-            ),
-            Image(
-                id = 5,
-                filePath = "https://example.com/image5.jpg",
-                itemId = 1,
-                order = 4,
-                content = "Sample image 5",
+                order = 1,
+                content = "Sample image 2",
                 createdAt = currentDate,
                 updatedAt = currentDate
             )

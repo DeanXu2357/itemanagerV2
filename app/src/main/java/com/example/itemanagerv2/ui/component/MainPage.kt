@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
-
 package com.example.itemanagerv2.ui.component
 
 import androidx.compose.foundation.layout.*
@@ -22,36 +20,44 @@ import java.util.Date
 @Composable
 fun MainPage(
     cardDetails: List<ItemCardDetail>,
-    onEditCard: (ItemCardDetail) -> Unit,
     onManualAdd: () -> Unit,
     onScanAdd: () -> Unit,
-    onDeleteCard: (ItemCardDetail) -> Unit
+    onDeleteCard: (ItemCardDetail) -> Unit,
+    onItemSelect: (ItemCardDetail) -> Unit
 ) {
     val gridState = rememberLazyGridState()
     var isFabExpanded by remember { mutableStateOf(false) }
 
-    Scaffold(topBar = {
-        CustomTopAppBar(title = "Asset Inventory", onSearchClick = { /* TODO: 實現搜索功能 */ })
-    }, floatingActionButton = {
-        InsertFAB(
-            isExpanded = isFabExpanded,
-            onExpandedChange = { isFabExpanded = it },
-            onManualAdd = onManualAdd,
-            onScanAdd = onScanAdd,
-        )
-    }) { innerPadding ->
+    Scaffold(
+        topBar = {
+            CustomTopAppBar(
+                title = "Asset Inventory",
+                onSearchClick = { /* TODO: 實現搜索功能 */ }
+            )
+        },
+        floatingActionButton = {
+            InsertFAB(
+                isExpanded = isFabExpanded,
+                onExpandedChange = { isFabExpanded = it },
+                onManualAdd = onManualAdd,
+                onScanAdd = onScanAdd,
+            )
+        }
+    ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
             LazyVerticalGrid(
-                columns = GridCells.Fixed(2), state = gridState, modifier = Modifier.fillMaxSize()
+                columns = GridCells.Fixed(2),
+                state = gridState,
+                modifier = Modifier.fillMaxSize()
             ) {
                 items(cardDetails) { item ->
                     ItemCard(
                         cardDetail = item,
-                        onEdit = { onEditCard(item) },
+                        onEdit = { onItemSelect(item) },
                         onDelete = { onDeleteCard(item) }
                     )
                 }
@@ -116,48 +122,16 @@ fun MainPagePreview() {
             codeImage = imageDummy,
             images = listOf(imageDummy),
             attributes = listOf(attributeDummy),
-        ),
-        ItemCardDetail(
-            id = 3,
-            name = "Sample Item 3",
-            coverImage = null,
-            categoryId = 1,
-            codeType = "QR",
-            codeContent = "Sample content 3",
-            codeImageId = 0,
-            coverImageId = 0,
-            createdAt = 0,
-            updatedAt = 0,
-            category = itemCategoryDummy,
-            codeImage = imageDummy,
-            images = listOf(imageDummy),
-            attributes = listOf(attributeDummy),
-        ),
-        ItemCardDetail(
-            id = 4,
-            name = "Sample Item 4",
-            coverImage = null,
-            categoryId = 2,
-            codeType = "Barcode",
-            codeContent = "Sample content 4",
-            codeImageId = 0,
-            coverImageId = 0,
-            createdAt = 0,
-            updatedAt = 0,
-            category = itemCategoryDummy,
-            codeImage = imageDummy,
-            images = listOf(imageDummy),
-            attributes = listOf(attributeDummy),
         )
     )
 
     BaseTheme {
         MainPage(
             cardDetails = previewCardDetails,
-            onEditCard = { },
             onManualAdd = { },
             onScanAdd = { },
-            onDeleteCard = { }
+            onDeleteCard = { },
+            onItemSelect = { }
         )
     }
 }
